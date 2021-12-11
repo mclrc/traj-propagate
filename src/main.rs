@@ -52,7 +52,7 @@ fn main() {
 
 	println!(
 		"Propagating interactions of {} bodies over {} days (dt={}min)",
-		system.labels.len(),
+		system.bodies.len(),
 		args.time,
 		args.dt
 	);

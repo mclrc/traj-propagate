@@ -48,7 +48,7 @@ pub fn propagate(
 	states.append(&mut propagated);
 
 	NBodySystemData {
-		labels: system.labels.clone(),
+		bodies: system.bodies.clone(),
 		mus: system.mus.clone(),
 		states,
 	}

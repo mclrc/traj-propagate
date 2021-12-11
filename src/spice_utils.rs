@@ -17,8 +17,9 @@ pub fn to_ids(labels: &[&str]) -> Vec<i32> {
 	labels.iter().map(|label| id_for_label(label)).collect()
 }
 
-pub fn get_gm(body: &str) -> f64 {
-	let body_name = spice::cstr!(body.to_ascii_uppercase());
+pub fn get_gm(body: i32) -> f64 {
+	// let body_name = spice::cstr!(body.to_ascii_uppercase());
+	let body_name = spice::cstr!(body.to_string());
 	let value_name = spice::cstr!("GM");
 	let mut dim: i32 = 0;
 	let mut value: f64 = 0.0;
@@ -30,12 +31,12 @@ pub fn get_gm(body: &str) -> f64 {
 	value * 1e9
 }
 
-pub fn get_mass(body: &str) -> f64 {
+pub fn get_mass(body: i32) -> f64 {
 	get_gm(body) / 6.67408e-11
 }
 
-pub fn get_state(body: &str, cb_name: &str, t: f64) -> [f64; 6] {
-	spice::core::raw::spkezr(body, t, "J2000", "NONE", cb_name).0
+pub fn get_state(body: i32, cb_id: i32, t: f64) -> [f64; 6] {
+	spice::core::raw::spkezr(&body.to_string(), t, "J2000", "NONE", &cb_id.to_string()).0
 }
 
 pub fn et2str(t: f64) -> String {
