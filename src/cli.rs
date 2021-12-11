@@ -38,7 +38,7 @@ pub struct Args {
 	pub bodies: Option<String>,
 
 	#[clap(short, long, value_name = "FILE", help = "File to write results to")]
-	pub output_file: Option<String>,
+	pub output_file: String,
 
 	#[clap(
 		long,

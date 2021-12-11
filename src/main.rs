@@ -16,7 +16,8 @@ fn naif_ids_from_list_string(string: &str) -> Vec<i32> {
 	string
 		.split(", ")
 		.map(|item| {
-			item.parse::<i32>()
+			item
+				.parse::<i32>()
 				.unwrap_or_else(|_| spice_utils::id_for_label(item))
 		})
 		.collect()
@@ -63,8 +64,6 @@ fn main() {
 		args.dt * 60,
 	);
 
-	if let Some(output_path) = args.output_file {
-		let steps_to_skip = args.sts.unwrap_or(29);
-		propagated.serialize_to_pickle(&output_path, steps_to_skip + 1);
-	}
+	let steps_to_skip = args.sts.unwrap_or(29);
+	propagated.serialize_to_pickle(&args.output_file, steps_to_skip + 1);
 }
