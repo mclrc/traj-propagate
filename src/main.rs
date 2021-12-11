@@ -1,11 +1,9 @@
 #![feature(trait_alias)]
-#![feature(let_chains)]
 #[allow(dead_code)]
 mod cli;
 mod file_utils;
 mod ivp_utils;
 mod nbs;
-mod ode;
 mod propagate;
 mod spice_utils;
 
@@ -18,8 +16,7 @@ fn naif_ids_from_list_string(string: &str) -> Vec<i32> {
 	string
 		.split(", ")
 		.map(|item| {
-			item
-				.parse::<i32>()
+			item.parse::<i32>()
 				.unwrap_or_else(|_| spice_utils::id_for_label(item))
 		})
 		.collect()
@@ -29,7 +26,7 @@ fn main() {
 	let args = Args::parse();
 
 	let system = if let Some(mk_name) = args.mk {
-		if let Some(_) = args.system {
+		if args.system.is_some() {
 			println!("[!] Warning: Both a meta-kernel and trajectory data was provided; Trajectory data will be ignored.")
 		}
 
