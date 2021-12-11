@@ -3,28 +3,27 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[clap(about, version, author)]
 pub struct Args {
-	#[clap(required = true, long, value_name = "FILE", help = "Meta-kernel file")]
-	pub mk: String,
+	#[clap(long, value_name = "FILE", help = "Meta-kernel file name")]
+	pub mk: Option<String>,
+
+	#[clap(long, value_name = "FILE", help = "Trajectory data file name")]
+	pub system: Option<String>,
 
 	#[clap(
-		required = true,
 		long,
-		required = true,
 		value_name = "UTC_TIMESTAMP",
 		help = "Time at which to begin propagation"
 	)]
-	pub t0: String,
+	pub t0: Option<String>,
 
 	#[clap(
-		required = true,
-		short,
+		long,
 		value_name = "NUM_DAYS",
 		help = "Time period over which to integrate"
 	)]
-	pub t: u64,
+	pub time: u64,
 
 	#[clap(
-		required = true,
 		long,
 		value_name = "NUM_MINUTES",
 		help = "Timestep size for numerical integration"
@@ -32,12 +31,11 @@ pub struct Args {
 	pub dt: u32,
 
 	#[clap(
-		required = true,
 		long,
 		value_name = "BODY_LIST",
 		help = "String containing comma-separated NAIF-IDs or body names"
 	)]
-	pub bodies: String,
+	pub bodies: Option<String>,
 
 	#[clap(short, long, value_name = "FILE", help = "File to write results to")]
 	pub output_file: Option<String>,
