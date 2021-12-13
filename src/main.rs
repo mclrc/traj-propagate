@@ -11,29 +11,41 @@ use clap::Parser;
 use cli::Args;
 use propagate::propagate;
 
+// Parse list string of body names/NAIF-IDs to Vec<i32> (containing NAIF-IDs)
 fn naif_ids_from_list_string(string: &str) -> Vec<i32> {
 	string
 		.split(", ")
 		.map(|item| {
 			item
+				// Try parsing i32-NAIF-ID from string
 				.parse::<i32>()
-				.unwrap_or_else(|_| spice_utils::id_for_label(item))
+				// If parse fails, item is likely a string body name. Query SPICE for ID
+				.unwrap_or_else(|_| match spice::bodn2c(item) {
+					// ID successfully retreived
+					(id, true) => id,
+					// ID was not found. Panic
+					(_, false) => panic!("No body with name or id '{}' could be found", item),
+				})
 		})
 		.collect()
 }
 
 fn main() {
+	// Load included kernels
 	spice::furnsh("spice/included.mk");
 
+	// Parse CLI arguments
 	let args = Args::parse();
 
+	// Parse supplied body list string to Vec<i32>
 	let bodies = naif_ids_from_list_string(
 		&args
 			.bodies
 			.expect("When propagating based on SPICE, 'bodies' is required"),
 	);
 
-	let system = nbs::NBodySystemData::instant_from_mk(
+	// Load initial state from SPICE
+	let system = nbs::NBodySystemData::instant_from_spice(
 		&args.mk,
 		&bodies,
 		&args
@@ -48,6 +60,7 @@ fn main() {
 		args.dt
 	);
 
+	// Perform propagation
 	let propagated = propagate(
 		&system,
 		&ivp_utils::solvers::rk4,
@@ -55,6 +68,7 @@ fn main() {
 		args.dt * 60,
 	);
 
+	// Save results to SPK
 	let cb_id = args.cb_id.unwrap_or(system.bodies[0]);
 	spice_utils::write_to_spk(&propagated, &args.output_file, cb_id, 1.0);
 
