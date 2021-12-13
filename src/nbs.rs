@@ -1,12 +1,13 @@
-use crate::file_utils;
 use crate::spice_utils;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NBodySystemData {
+	pub t0: String,
 	pub bodies: Vec<i32>,
 	pub mus: Vec<f64>,
 	pub states: Vec<ndarray::Array2<f64>>,
+	pub dts: Vec<f32>,
 }
 
 impl NBodySystemData {
@@ -14,21 +15,23 @@ impl NBodySystemData {
 		spice::furnsh(mk_name);
 
 		let states = vec![Self::state_at_instant(bodies, spice::str2et(t))];
-		let mus = bodies.iter().map(|id| spice_utils::get_gm(*id)).collect();
+		let mus = bodies.iter().map(|&id| spice_utils::get_gm(id)).collect();
 
 		spice::unload(mk_name);
 
 		NBodySystemData {
+			t0: t.to_string(),
 			bodies: bodies.to_vec(),
 			mus,
 			states,
+			dts: vec![0.0],
 		}
 	}
 
-	pub fn trajectories_from_mk(mk_name: &str, bodies: &[i32], t0: &str, t: i32, dt: u32) -> Self {
+	pub fn trajectories_from_mk(mk_name: &str, bodies: &[i32], t0: &str, t: i32, dt: f32) -> Self {
 		spice::furnsh(mk_name);
 
-		let mus = bodies.iter().map(|id| spice_utils::get_gm(*id)).collect();
+		let mus = bodies.iter().map(|&id| spice_utils::get_gm(id)).collect();
 		let mut states = Vec::new();
 
 		let et_j2000 = spice::str2et(t0);
@@ -41,10 +44,14 @@ impl NBodySystemData {
 
 		spice::unload(mk_name);
 
+		let steps = states.len();
+
 		NBodySystemData {
+			t0: t0.to_string(),
 			bodies: bodies.to_vec(),
 			mus,
 			states,
+			dts: vec![dt; steps],
 		}
 	}
 
@@ -53,25 +60,11 @@ impl NBodySystemData {
 
 		let state: Vec<ndarray::Array1<f64>> = bodies
 			.iter()
-			.map(|id| ndarray::arr1(&spice_utils::get_state(*id, cb_id, t)) * 1e3)
+			.map(|&id| ndarray::arr1(&spice_utils::get_state(id, cb_id, t)) * 1e3)
 			.collect();
 
 		let views: Vec<ndarray::ArrayView1<f64>> = state.iter().map(|s| s.view()).collect();
 
 		ndarray::stack(ndarray::Axis(0), &views[..]).unwrap()
-	}
-
-	pub fn serialize_to_pickle(&self, fname: &str, nth_steps: usize) {
-		let states: Vec<ndarray::Array2<f64>> =
-			self.states.iter().cloned().step_by(nth_steps).collect();
-
-		file_utils::serialize_to_pickle(
-			&NBodySystemData {
-				bodies: self.bodies.clone(),
-				mus: self.mus.clone(),
-				states,
-			},
-			fname.to_string(),
-		);
 	}
 }

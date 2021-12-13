@@ -36,20 +36,24 @@ pub fn propagate(
 	let f = move |state: &ndarray::Array2<f64>| calc_derivative(state, &mus);
 
 	let mut states = system.states.clone();
+	let mut dts = system.dts.clone();
 
-	let mut propagated = ivp_utils::solve_ivp(
+	let (new_states, new_dts) = ivp_utils::solve_ivp(
 		&system.states[system.states.len() - 1],
 		&f,
 		solver,
 		t,
-		dt as f64,
+		dt as f32,
 	);
 
-	states.append(&mut propagated);
+	states.extend_from_slice(&new_states[1..]);
+	dts.extend_from_slice(&new_dts[1..]);
 
 	NBodySystemData {
+		t0: system.t0.clone(),
 		bodies: system.bodies.clone(),
 		mus: system.mus.clone(),
 		states,
+		dts,
 	}
 }

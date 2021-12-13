@@ -1,0 +1,11 @@
+Custom TPC kernel containing the standard gravitational parameters of bodies and probes
+not included in official TPC kernels
+
+\begindata
+     BODY000_GMLIST = ( -202, -82, -32, -31 )
+
+     BODY-202_GM    = ( 1.637819232E-07 )
+     BODY-31_GM     = ( 4.818018352E-08 )
+     BODY-32_GM     = ( 4.818018352E-08 )
+     BODY-82_GM     = ( 3.737484800E-07 )
+\begintext

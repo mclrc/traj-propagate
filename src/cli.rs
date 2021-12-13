@@ -4,10 +4,7 @@ use clap::Parser;
 #[clap(about, version, author)]
 pub struct Args {
 	#[clap(long, value_name = "FILE", help = "Meta-kernel file name")]
-	pub mk: Option<String>,
-
-	#[clap(long, value_name = "FILE", help = "Trajectory data file name")]
-	pub system: Option<String>,
+	pub mk: String,
 
 	#[clap(
 		long,
@@ -46,4 +43,7 @@ pub struct Args {
 		help = "Number of steps to skip between each saved one to reduce output file size"
 	)]
 	pub sts: Option<usize>,
+
+	#[clap(long, value_name = "NAIF_ID", help = "Observing body for SPK segments")]
+	pub cb_id: Option<i32>,
 }
