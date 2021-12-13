@@ -2,7 +2,7 @@ use crate::nbs;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
-// Retreive standard gravitational parameter for body
+// Retrieve standard gravitational parameter for body
 pub fn get_gm(body: i32) -> f64 {
 	let body_name = spice::cstr!(body.to_string());
 	let value_name = spice::cstr!("GM");
@@ -17,7 +17,7 @@ pub fn get_gm(body: i32) -> f64 {
 	value * 1e9
 }
 
-// Retreive state vector for body relative to central body at t
+// Retrieve state vector for body relative to central body at t
 pub fn get_state(body: i32, cb_id: i32, t: f64) -> [f64; 6] {
 	spice::core::raw::spkezr(&body.to_string(), t, "J2000", "NONE", &cb_id.to_string()).0
 }
@@ -35,7 +35,7 @@ pub fn et2str(t: f64) -> String {
 	String::from(result_str)
 }
 
-// Retreive state vectors of specified bodies at t
+// Retrieve state vectors of specified bodies at t
 pub fn states_at_instant(bodies: &[i32], t: f64) -> ndarray::Array2<f64> {
 	let cb_id = bodies[0];
 
@@ -114,9 +114,8 @@ pub fn write_to_spk(system: &nbs::NBodySystemData, fname: &str, cb_id: i32, accu
 			.map(|&s| s.slice(ndarray::s![idx, ..]))
 			.collect::<Vec<ndarray::ArrayView1<f64>>>();
 
-		let mut states_matrix_km = (ndarray::concatenate(ndarray::Axis(0), &states[..]).unwrap()
-			- &cb_states_matrix)
-			/ 1000.0;
+		let mut states_matrix_km =
+			(ndarray::concatenate(ndarray::Axis(0), &states[..]).unwrap() - &cb_states_matrix) / 1000.0;
 		// SPICE segment identifier
 		let segid = spice::cstr!(format!("Position of {} relative to {}", id, cb_id));
 		// SPICE reference frame

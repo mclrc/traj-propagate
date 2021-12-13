@@ -21,7 +21,7 @@ fn naif_ids_from_list_string(string: &str) -> Vec<i32> {
 				.parse::<i32>()
 				// If parse fails, item is likely a string body name. Query SPICE for ID
 				.unwrap_or_else(|_| match spice::bodn2c(item) {
-					// ID successfully retreived
+					// ID successfully retrieved
 					(id, true) => id,
 					// ID was not found. Panic
 					(_, false) => panic!("No body with name or id '{}' could be found", item),
@@ -32,7 +32,7 @@ fn naif_ids_from_list_string(string: &str) -> Vec<i32> {
 
 fn main() {
 	// Load included kernels
-	spice::furnsh("spice/included.mk");
+	spice::furnsh("spice/included.tm");
 
 	// Parse CLI arguments
 	let args = Args::parse();
@@ -72,5 +72,5 @@ fn main() {
 	let cb_id = args.cb_id.unwrap_or(system.bodies[0]);
 	spice_utils::write_to_spk(&propagated, &args.output_file, cb_id, 1.0);
 
-	spice::furnsh("spice/included.mk");
+	spice::furnsh("spice/included.tm");
 }

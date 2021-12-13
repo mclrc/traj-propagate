@@ -16,13 +16,13 @@ pub struct NBodySystemData {
 }
 
 impl NBodySystemData {
-	// Retreives state at t for specified bodies from specified meta kernel
+	// Retrieves state at t for specified bodies from specified meta kernel
 	pub fn instant_from_spice(mk_name: &str, bodies: &[i32], t: &str) -> Self {
 		spice::furnsh(mk_name);
 
-		// Retreive initial state vectors
+		// Retrieve initial state vectors
 		let y0 = spice_utils::states_at_instant(bodies, spice::str2et(t));
-		// Retreive mus
+		// Retrieve mus
 		let mus = bodies.iter().map(|&id| spice_utils::get_gm(id)).collect();
 
 		spice::unload(mk_name);
