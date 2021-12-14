@@ -72,5 +72,5 @@ fn main() {
 	let cb_id = args.cb_id.unwrap_or(system.bodies[0]);
 	spice_utils::write_to_spk(&propagated, &args.output_file, cb_id, 1.0);
 
-	spice::furnsh("spice/included.tm");
+	spice::unload("spice/included.tm");
 }
