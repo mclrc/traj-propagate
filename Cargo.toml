@@ -1,10 +1,10 @@
 [package]
 name = "traj-propagate"
 version = "0.0.1"
-authors = ["pixldemon <moritzamando@gmail.com>"]
+authors = ["pixldemon <moritzamando@protonmail.com>"]
 edition = "2018"
 
 [dependencies]
 rust-spice = "0.7.1"
-ndarray = { version = "*", features = ["serde"] }
+ndarray = "*"
 clap = { version = "3.0.0-rc.1", features = [ "derive" ] }

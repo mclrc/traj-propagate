@@ -11,7 +11,7 @@ The program will output a single SPK kernel containing the propagated trajectory
 that were included in the calculation. This kernel can be used with other SPICE integrated tools. The
 trajectories could be visualised using SPICE-Enhanced Cosmographia, for example.
 
-Note that the [CSPICE-library](https://naif.jpl.nasa.gov/naif/toolkit.html) needs to be installed on your system for this program to compile (see [these requirements](https://github.com/gregoirehenry/rust-spice))
+Note that the [CSPICE library](https://naif.jpl.nasa.gov/naif/toolkit.html) needs to be installed on your system for this program to compile (see [these requirements](https://github.com/gregoirehenry/rust-spice#requirements))
 
 ### Usage
 ```
@@ -19,7 +19,7 @@ $ traj-propagate --help
 
 traj-propagate 0.0.1
 
-pixldemon <moritzamando@gmail.com>
+pixldemon <moritzamando@protonmail.com>
 
 USAGE:
     traj-propagate [OPTIONS] --mk <FILE> --t0 <UTC_TIMESTAMP> --time <NUM_DAYS> --dt <NUM_MINUTES> --output-file <FILE>
