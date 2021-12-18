@@ -53,7 +53,7 @@ pub fn states_at_instant(bodies: &[i32], t: f64) -> ndarray::Array2<f64> {
 // 'fraction_to_save' is the fraction of steps to save, e. g. 0.5 will save every 2nd step
 pub fn write_to_spk(system: &nbs::NBodySystemData, fname: &str, cb_id: i32, fraction_to_save: f32) {
 	if !(0.0..1.0).contains(&fraction_to_save) {
-		panic!("Please supply an fraction_to_save value between 0 and 1")
+		panic!("Please supply a fraction_to_save value between 0 and 1")
 	}
 
 	let fname = spice::cstr!(fname);
@@ -114,9 +114,9 @@ pub fn write_to_spk(system: &nbs::NBodySystemData, fname: &str, cb_id: i32, frac
 			.iter()
 			.map(|&s| s.slice(ndarray::s![idx, ..]))
 			.collect::<Vec<ndarray::ArrayView1<f64>>>();
-
 		let mut states_matrix_km =
 			(ndarray::concatenate(ndarray::Axis(0), &states[..]).unwrap() - &cb_states_matrix) / 1000.0;
+
 		// SPICE segment identifier
 		let segid = spice::cstr!(format!("Position of {} relative to {}", id, cb_id));
 		// SPICE reference frame
@@ -137,7 +137,7 @@ pub fn write_to_spk(system: &nbs::NBodySystemData, fname: &str, cb_id: i32, frac
 				epochs_j2000[epochs_j2000.len() - 1],
 				// Segment identifier
 				segid,
-				// Degree of polynomial to be used for lagrange interpolation
+				// Degree of polynomial to be used for lagrange interpolation. Currently somewhat arbitrary.
 				17,
 				// Number of states/epochs
 				states_to_save.len() as i32,
