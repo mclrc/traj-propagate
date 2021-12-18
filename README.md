@@ -45,3 +45,17 @@ Propagating interactions of 5 bodies over 308 days (dt=10min)
 Progress:  [##################################################] 100% complete 
 ```
 This will propagate the trajectory of NASA's MAVEN mission from shortly after launch to just before it reached Mars and save the trajectory to `maven_cruise.bsp`
+
+```
+$ brief spice_data/maven_cruise.bsp
+
+BRIEF -- Version 4.0.0, September 8, 2010 -- Toolkit Version N0066
+ 
+ 
+Summary for: spice_data/maven_cruise.bsp
+ 
+Bodies: MAVEN (-202)            JUPITER BARYCENTER (5)  EARTH (399)
+        Start of Interval (ET)              End of Interval (ET)
+        -----------------------------       -----------------------------
+        2013 NOV 19 00:01:07.182            2014 SEP 23 00:01:07.182
+```
