@@ -5,9 +5,6 @@ authors = ["pixldemon <moritzamando@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-num-traits = "*"
-serde = "*"
-serde-pickle = "*"
 rust-spice = "0.7.1"
 ndarray = { version = "*", features = ["serde"] }
 clap = { version = "3.0.0-rc.1", features = [ "derive" ] }

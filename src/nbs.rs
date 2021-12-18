@@ -1,7 +1,5 @@
 use crate::spice_utils;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
 pub struct NBodySystemData {
 	// Initial time as UTC timestamp "YYY-MMM-DD HH:MM:SS"
 	pub t0: String,
