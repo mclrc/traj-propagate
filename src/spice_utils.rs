@@ -50,11 +50,12 @@ pub fn states_at_instant(bodies: &[i32], t: f64) -> ndarray::Array2<f64> {
 }
 
 // Write data contained in system to SPK file
-// 'accuracy' is the fraction of steps to save, e. g. 0.5 will save every 2nd step
-pub fn write_to_spk(system: &nbs::NBodySystemData, fname: &str, cb_id: i32, accuracy: f32) {
-	if accuracy < 0.0 || accuracy > 1.0 {
-		panic!("Please supply an accuracy value between 0 and 1")
+// 'fraction_to_save' is the fraction of steps to save, e. g. 0.5 will save every 2nd step
+pub fn write_to_spk(system: &nbs::NBodySystemData, fname: &str, cb_id: i32, fraction_to_save: f32) {
+	if !(0.0..1.0).contains(&fraction_to_save) {
+		panic!("Please supply an fraction_to_save value between 0 and 1")
 	}
+
 	let fname = spice::cstr!(fname);
 	// Internal file name
 	let ifname = spice::cstr!("SPK_File");
@@ -66,7 +67,7 @@ pub fn write_to_spk(system: &nbs::NBodySystemData, fname: &str, cb_id: i32, accu
 	unsafe { spice::c::spkopn_c(fname, ifname, ncomch, &mut handle) };
 
 	// Extract states to actually write to the file
-	let steps_to_skip = (1.0 / accuracy) as usize;
+	let steps_to_skip = (1.0 / fraction_to_save) as usize;
 	let states_to_save: Vec<&ndarray::Array2<f64>> =
 		system.states.iter().step_by(steps_to_skip).collect();
 
