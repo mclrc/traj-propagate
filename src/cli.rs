@@ -11,7 +11,7 @@ pub struct Args {
 		value_name = "UTC_TIMESTAMP",
 		help = "Time at which to begin propagation"
 	)]
-	pub t0: Option<String>,
+	pub t0: String,
 
 	#[clap(
 		long,
@@ -40,10 +40,38 @@ pub struct Args {
 	#[clap(
 		long,
 		value_name = "NUM_STEPS",
-		help = "Number of steps to skip between each saved one to reduce output file size"
+		help = "Number of steps to skip between each saved one to reduce output file size. Defaults to 0"
 	)]
 	pub sts: Option<usize>,
 
-	#[clap(long, value_name = "NAIF_ID", help = "Observing body for SPK segments")]
+	#[clap(
+		long,
+		value_name = "NAIF_ID",
+		help = "Observing body for SPK segments. Defaults to first body in list"
+	)]
 	pub cb_id: Option<i32>,
+}
+
+impl Args {
+	// Parse list string of body names/NAIF-IDs to Vec<i32> (containing NAIF-IDs)
+	pub fn parse_body_list(&self) -> Vec<i32> {
+		self
+			.bodies
+			.as_ref()
+			.expect("Please provide a list of bodies")
+			.split(", ")
+			.map(|item| {
+				item
+					// Try parsing i32-NAIF-ID from string
+					.parse::<i32>()
+					// If parse fails, item is likely a string body name. Query SPICE for ID
+					.unwrap_or_else(|_| match spice::bodn2c(item) {
+						// ID successfully retrieved
+						(id, true) => id,
+						// ID was not found. Panic
+						(_, false) => panic!("No body with name or id '{}' could be found", item),
+					})
+			})
+			.collect()
+	}
 }

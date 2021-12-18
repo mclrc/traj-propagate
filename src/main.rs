@@ -11,25 +11,6 @@ use clap::Parser;
 use cli::Args;
 use propagate::propagate;
 
-// Parse list string of body names/NAIF-IDs to Vec<i32> (containing NAIF-IDs)
-fn naif_ids_from_list_string(string: &str) -> Vec<i32> {
-	string
-		.split(", ")
-		.map(|item| {
-			item
-				// Try parsing i32-NAIF-ID from string
-				.parse::<i32>()
-				// If parse fails, item is likely a string body name. Query SPICE for ID
-				.unwrap_or_else(|_| match spice::bodn2c(item) {
-					// ID successfully retrieved
-					(id, true) => id,
-					// ID was not found. Panic
-					(_, false) => panic!("No body with name or id '{}' could be found", item),
-				})
-		})
-		.collect()
-}
-
 fn main() {
 	// Load included kernels
 	spice::furnsh("spice/included.tm");
@@ -38,20 +19,9 @@ fn main() {
 	let args = Args::parse();
 
 	// Parse supplied body list string to Vec<i32>
-	let bodies = naif_ids_from_list_string(
-		&args
-			.bodies
-			.expect("When propagating based on SPICE, 'bodies' is required"),
-	);
-
+	let bodies = args.parse_body_list();
 	// Load initial state from SPICE
-	let system = nbs::NBodySystemData::instant_from_spice(
-		&args.mk,
-		&bodies,
-		&args
-			.t0
-			.expect("When propagating based on SPICE, 't0' is required"),
-	);
+	let system = nbs::NBodySystemData::instant_from_spice(&args.mk, &bodies, &args.t0);
 
 	println!(
 		"Propagating interactions of {} bodies over {} days (dt={}min)",
