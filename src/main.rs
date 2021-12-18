@@ -40,7 +40,12 @@ fn main() {
 
 	// Save results to SPK
 	let cb_id = args.cb_id.unwrap_or(system.bodies[0]);
-	spice_utils::write_to_spk(&propagated, &args.output_file, cb_id, 1.0);
+	spice_utils::write_to_spk(
+		&propagated,
+		&args.output_file,
+		cb_id,
+		args.fts.unwrap_or(1.0),
+	);
 
 	spice::unload("spice/included.tm");
 }

@@ -39,10 +39,10 @@ pub struct Args {
 
 	#[clap(
 		long,
-		value_name = "NUM_STEPS",
-		help = "Number of steps to skip between each saved one to reduce output file size. Defaults to 0"
+		value_name = "FRACTION",
+		help = "Fraction of steps to save to SPK file. 1 saves every step, 0.5 every 2nd etc. Defaults to 1"
 	)]
-	pub sts: Option<usize>,
+	pub fts: Option<f32>,
 
 	#[clap(
 		long,

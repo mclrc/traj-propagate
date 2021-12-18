@@ -28,10 +28,11 @@ OPTIONS:
         --bodies <BODY_LIST>    String containing comma-separated NAIF-IDs or body names
         --cb-id <NAIF_ID>       Observing body for SPK segments. Defaults to first body in list
         --dt <NUM_MINUTES>      Timestep size for numerical integration
+        --fts <FRACTION>        Fraction of steps to save to SPK file. 1 saves every step, 0.5 every
+                                2nd etc. Defaults to 1.
     -h, --help                  Print help information
         --mk <FILE>             Meta-kernel file name
     -o, --output-file <FILE>    File to write results to
-        --sts <NUM_STEPS>       Number of steps to skip between each saved one to reduce output file
                                 size. Defaults to 0
         --t0 <UTC_TIMESTAMP>    Time at which to begin propagation
         --time <NUM_DAYS>       Time period over which to integrate
