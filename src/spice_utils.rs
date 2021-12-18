@@ -52,7 +52,7 @@ pub fn states_at_instant(bodies: &[i32], t: f64) -> ndarray::Array2<f64> {
 // Write data contained in system to SPK file
 // 'fraction_to_save' is the fraction of steps to save, e. g. 0.5 will save every 2nd step
 pub fn write_to_spk(system: &nbs::NBodySystemData, fname: &str, cb_id: i32, fraction_to_save: f32) {
-	if !(0.0..1.0).contains(&fraction_to_save) {
+	if !(0.0..=1.0).contains(&fraction_to_save) {
 		panic!("Please supply a fraction_to_save value between 0 and 1")
 	}
 
@@ -138,7 +138,7 @@ pub fn write_to_spk(system: &nbs::NBodySystemData, fname: &str, cb_id: i32, frac
 				// Segment identifier
 				segid,
 				// Degree of polynomial to be used for lagrange interpolation. Currently somewhat arbitrary.
-				17,
+				7,
 				// Number of states/epochs
 				states_to_save.len() as i32,
 				// Pointer to beginning of state matrix
