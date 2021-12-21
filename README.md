@@ -1,17 +1,16 @@
 ### traj-propagate
-This program is a command line utility that reads from and writes to SPICE SPK kernel files
-to propagate trajectories of the specified bodies. The user must provide SPK kernels containing
+A command line utility that reads from and writes to SPICE SPK files
+to propagate trajectories of specified bodies. The user must provide SPKs containing
 position and velocity data of the bodies they wish to include in the calculation so that an initial
 condition for the propagation can be assembled from them. If bodies whose standard
-gravitational parameter is not contained in the included PCK kernels need to be included in the 
-calculations, additional PCK kernels must be provided. All user-provided kernels must be loaded from
+gravitational parameter is not contained in the included PCKs need to be included in the 
+calculations, additional PCKs must be provided. All user-provided kernels must be loaded from
 a single meta-kernel text file.
 
-The program will output a single SPK kernel containing the propagated trajectory data for all bodies
-that were included in the calculation. This kernel can be used with other SPICE integrated tools. The
-trajectories could be visualised using SPICE-Enhanced Cosmographia, for example.
+The program will output a single SPK containing the propagated trajectory data for all bodies
+that were included in the calculation. This kernel can be used with other SPICE integrated tools, such as SPICE-Enhanced Cosmographia.
 
-Note that the [CSPICE library](https://naif.jpl.nasa.gov/naif/toolkit.html) needs to be installed on your system for this program to compile (see [these requirements](https://github.com/gregoirehenry/rust-spice#requirements))
+Note that the [CSPICE library](https://naif.jpl.nasa.gov/naif/toolkit.html) needs to be installed for this program to work. (see [these requirements](https://github.com/gregoirehenry/rust-spice#requirements))
 
 ### Usage
 ```
@@ -49,13 +48,14 @@ This will propagate the trajectory of NASA's MAVEN mission from shortly after la
 
 ```
 $ brief spice_data/maven_cruise.bsp
-
+ 
 BRIEF -- Version 4.0.0, September 8, 2010 -- Toolkit Version N0066
  
  
 Summary for: spice_data/maven_cruise.bsp
  
-Bodies: MAVEN (-202)            JUPITER BARYCENTER (5)  EARTH (399)
+Bodies: MAVEN (-202)            EARTH (399)
+        JUPITER BARYCENTER (5)  MARS (499)
         Start of Interval (ET)              End of Interval (ET)
         -----------------------------       -----------------------------
         2013 NOV 19 00:01:07.182            2014 SEP 23 00:01:07.182
