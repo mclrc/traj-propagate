@@ -32,7 +32,6 @@ OPTIONS:
     -h, --help                  Print help information
         --mk <FILE>             Meta-kernel file name
     -o, --output-file <FILE>    File to write results to
-                                size. Defaults to 0
         --t0 <UTC_TIMESTAMP>    Time at which to begin propagation
         --time <NUM_DAYS>       Time period over which to integrate
     -V, --version               Print version information
