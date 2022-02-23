@@ -32,7 +32,7 @@ pub struct Args {
 		value_name = "BODY_LIST",
 		help = "String containing comma-separated NAIF-IDs or body names"
 	)]
-	pub bodies: Option<String>,
+	pub bodies: String,
 
 	#[clap(short, long, value_name = "FILE", help = "File to write results to")]
 	pub output_file: String,
@@ -50,28 +50,4 @@ pub struct Args {
 		help = "Observing body for SPK segments. Defaults to first body in list"
 	)]
 	pub cb_id: Option<i32>,
-}
-
-impl Args {
-	// Parse list string of body names/NAIF-IDs to Vec<i32> (containing NAIF-IDs)
-	pub fn parse_body_list(&self) -> Vec<i32> {
-		self
-			.bodies
-			.as_ref()
-			.expect("Please provide a list of bodies")
-			.split(", ")
-			.map(|item| {
-				item
-					// Try parsing i32-NAIF-ID from string
-					.parse::<i32>()
-					// If parse fails, item is likely a string body name. Query SPICE for ID
-					.unwrap_or_else(|_| match spice::bodn2c(item) {
-						// ID successfully retrieved
-						(id, true) => id,
-						// ID was not found. Panic
-						(_, false) => panic!("No body with name or id '{}' could be found", item),
-					})
-			})
-			.collect()
-	}
 }

@@ -2,7 +2,7 @@ use crate::nbs;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
-// Retrieve standard gravitational parameter for body
+/// Retrieve standard gravitational parameter for body
 pub fn get_gm(body: i32) -> f64 {
 	let body_name = spice::cstr!(body.to_string());
 	let value_name = spice::cstr!("GM");
@@ -17,12 +17,13 @@ pub fn get_gm(body: i32) -> f64 {
 	value * 1e9
 }
 
-// Retrieve state vector for body relative to central body at t
+/// Retrieve state vector for body relative to central body at t
 pub fn get_state(body: i32, cb_id: i32, t: f64) -> [f64; 6] {
 	spice::core::raw::spkezr(&body.to_string(), t, "J2000", "NONE", &cb_id.to_string()).0
 }
 
-// Convert J2000 timestamp to UTC timestamp in string format
+/// Convert J2000 timestamp to UTC timestamp in string format
+#[allow(dead_code)]
 pub fn et2str(t: f64) -> String {
 	let mut buff = [0 as c_char; 50];
 	let format = CString::new("C").unwrap().into_raw();
@@ -35,7 +36,7 @@ pub fn et2str(t: f64) -> String {
 	String::from(result_str)
 }
 
-// Retrieve state vectors of specified bodies at t
+/// Retrieve state vectors of specified bodies at t
 pub fn states_at_instant(bodies: &[i32], t: f64) -> ndarray::Array2<f64> {
 	let cb_id = bodies[0];
 
@@ -49,8 +50,8 @@ pub fn states_at_instant(bodies: &[i32], t: f64) -> ndarray::Array2<f64> {
 	ndarray::stack(ndarray::Axis(0), &views[..]).unwrap()
 }
 
-// Write data contained in system to SPK file
-// 'fraction_to_save' is the fraction of steps to save, e. g. 0.5 will save every 2nd step
+/// Write data contained in system to SPK file
+/// 'fraction_to_save' is the fraction of steps to save, e. g. 0.5 will save every 2nd step
 pub fn write_to_spk(system: &nbs::NBodySystemData, fname: &str, cb_id: i32, fraction_to_save: f32) {
 	if !(0.0..=1.0).contains(&fraction_to_save) {
 		panic!("Please supply a fraction_to_save value between 0 and 1")
