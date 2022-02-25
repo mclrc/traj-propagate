@@ -11,6 +11,7 @@ use cli::Args;
 fn main() -> Result<(), &'static str> {
 	let args = Args::parse();
 
+	// Replace names with corresponding NAIF-IDs
 	let bodies = args
 		.bodies
 		.iter()
@@ -23,7 +24,7 @@ fn main() -> Result<(), &'static str> {
 		})
 		.collect::<Vec<i32>>();
 
-	let (states, ets) = propagate::propagate(&args.mk, &args.t0, args.dt, args.h, &bodies);
+	let (states, ets) = propagate::propagate(&args.mk, &bodies, &args.t0, args.dt, args.h);
 
 	spice_utils::write_to_spk(
 		&args.output_file,

@@ -1,4 +1,10 @@
-/// Calculate gravitational acceleration based on vector to attracting body and mu
+/// Calculate gravitational acceleration two bodies exert on one another
+///   `r`: Vec from first to second body
+///   `mu1`: Standard gravitational parameter of first body
+///   `mu2`: Standard gravitational parameter of second body
+/// Returns tuple `(a1, a2)` where
+///   `a1`: Acceleration of the first body
+///   `a2`: Acceleration of the second body
 fn a_grav(
 	r: &ndarray::Array1<f64>,
 	mu1: f64,
@@ -9,6 +15,9 @@ fn a_grav(
 }
 
 /// Calculate value of derivative for given state
+///   `state`: Current state of the system; ndarray of the bodies state vectors
+///   `mus`: Standard gravitational parameters of the bodies
+/// Returns ndarray of derivative state vectors
 pub fn n_body_ode(state: &ndarray::Array2<f64>, mus: &[f64]) -> ndarray::Array2<f64> {
 	let n = mus.len();
 
