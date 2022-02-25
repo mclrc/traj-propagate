@@ -16,23 +16,26 @@ pub struct Args {
 	#[clap(
 		long,
 		value_name = "NUM_DAYS",
-		help = "Time period over which to integrate"
+		help = "Time period over which to propagate"
 	)]
-	pub time: u64,
+	pub dt: f64,
 
 	#[clap(
 		long,
 		value_name = "NUM_MINUTES",
-		help = "Timestep size for numerical integration"
+		help = "Timestep size for integration"
 	)]
-	pub dt: u32,
+	pub h: f64,
 
 	#[clap(
 		long,
-		value_name = "BODY_LIST",
-		help = "String containing comma-separated NAIF-IDs or body names"
+		required = true,
+		value_delimiter = ',',
+		require_delimiter = true,
+		min_values = 2,
+		help = "Comma-separated NAIF-IDs or body names"
 	)]
-	pub bodies: String,
+	pub bodies: Vec<String>,
 
 	#[clap(short, long, value_name = "FILE", help = "File to write results to")]
 	pub output_file: String,

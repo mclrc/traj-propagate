@@ -1,4 +1,3 @@
-use crate::nbs;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
@@ -52,7 +51,14 @@ pub fn states_at_instant(bodies: &[i32], t: f64) -> ndarray::Array2<f64> {
 
 /// Write data contained in system to SPK file
 /// 'fraction_to_save' is the fraction of steps to save, e. g. 0.5 will save every 2nd step
-pub fn write_to_spk(system: &nbs::NBodySystemData, fname: &str, cb_id: i32, fraction_to_save: f32) {
+pub fn write_to_spk(
+	fname: &str,
+	bodies: &[i32],
+	states: &[ndarray::Array2<f64>],
+	ets: &[f64],
+	cb_id: i32,
+	fraction_to_save: f32,
+) {
 	if !(0.0..=1.0).contains(&fraction_to_save) {
 		panic!("Please supply a fraction_to_save value between 0 and 1")
 	}
@@ -69,54 +75,45 @@ pub fn write_to_spk(system: &nbs::NBodySystemData, fname: &str, cb_id: i32, frac
 
 	// Extract states to actually write to the file
 	let steps_to_skip = (1.0 / fraction_to_save) as usize;
-	let states_to_save: Vec<&ndarray::Array2<f64>> =
-		system.states.iter().step_by(steps_to_skip).collect();
 
-	// Compute time differences between selected steps
-	let dts_to_save: Vec<f32> = system
-		.dts
-		.chunks(steps_to_skip)
-		.map(|c| c.iter().sum())
-		.collect();
-
-	// Create vec for J2000 timestamps corresponding to selected states
-	let mut epochs_j2000 = Vec::<f64>::with_capacity(dts_to_save.len());
-	let t0_j2000 = spice::str2et(&system.t0);
-	epochs_j2000.push(t0_j2000);
-
-	// Populate epoch vector with previous J2000 timestamp + dt
-	for (idx, &dt) in dts_to_save.iter().skip(1).enumerate() {
-		epochs_j2000.push(epochs_j2000[idx] + f64::from(dt));
-	}
+	let mut ets = ets
+		.iter()
+		.cloned()
+		.step_by(steps_to_skip)
+		.collect::<Vec<f64>>();
+	let states = states
+		.iter()
+		.step_by(steps_to_skip)
+		.collect::<Vec<&ndarray::Array2<f64>>>();
 
 	// Extract index of central observing body that is used across NBSD fields
-	let cb_idx = system
-		.bodies
+	let cb_idx = bodies
 		.iter()
 		.position(|&id| id == cb_id)
 		.expect("Dataset does not contain specified observing body");
 
 	// Create state matrix for central body to subtract from target body state matrices
 	// to yield state relative to observing body
-	let cb_states: Vec<ndarray::ArrayView1<f64>> = states_to_save
+	let cb_states: Vec<ndarray::ArrayView1<f64>> = states
 		.iter()
 		.map(|&s| s.slice(ndarray::s![cb_idx, ..]))
 		.collect();
 	let cb_states_matrix = ndarray::concatenate(ndarray::Axis(0), &cb_states[..]).unwrap();
 
-	for (idx, &id) in system.bodies.iter().enumerate() {
+	for (idx, &id) in bodies.iter().enumerate() {
 		// Skip observing body
 		if id == cb_id {
 			continue;
 		}
 
 		// Create state matrix for current target body with states in km and km/s
-		let states = states_to_save
+		let body_states = states
 			.iter()
 			.map(|&s| s.slice(ndarray::s![idx, ..]))
 			.collect::<Vec<ndarray::ArrayView1<f64>>>();
-		let mut states_matrix_km =
-			(ndarray::concatenate(ndarray::Axis(0), &states[..]).unwrap() - &cb_states_matrix) / 1000.0;
+		let mut states_matrix_km = (ndarray::concatenate(ndarray::Axis(0), &body_states[..])
+			.unwrap() - &cb_states_matrix)
+			/ 1000.0;
 
 		// SPICE segment identifier
 		let segid = spice::cstr!(format!("Position of {} relative to {}", id, cb_id));
@@ -133,19 +130,19 @@ pub fn write_to_spk(system: &nbs::NBodySystemData, fname: &str, cb_id: i32, frac
 				// Reference frame
 				frame,
 				// t0
-				epochs_j2000[0],
+				ets[0],
 				// tfinal
-				epochs_j2000[epochs_j2000.len() - 1],
+				ets[ets.len() - 1],
 				// Segment identifier
 				segid,
 				// Degree of polynomial to be used for lagrange interpolation. Currently somewhat arbitrary.
 				7,
 				// Number of states/epochs
-				states_to_save.len() as i32,
+				body_states.len() as i32,
 				// Pointer to beginning of state matrix
 				states_matrix_km.as_mut_ptr().cast(),
 				// Pointer to beginning of epoch vec
-				epochs_j2000.as_mut_ptr(),
+				ets.as_mut_ptr(),
 			)
 		}
 	}
