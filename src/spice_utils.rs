@@ -36,7 +36,7 @@ pub fn et2str(t: f64) -> String {
 }
 
 /// Retrieve state vectors of specified bodies at t
-pub fn states_at_instant(bodies: &[i32], t: f64) -> ndarray::Array2<f64> {
+pub fn states_at_instant(bodies: &[i32], t: f64) -> ndarray::Array1<f64> {
 	let cb_id = bodies[0];
 
 	let state: Vec<ndarray::Array1<f64>> = bodies
@@ -46,7 +46,7 @@ pub fn states_at_instant(bodies: &[i32], t: f64) -> ndarray::Array2<f64> {
 
 	let views: Vec<ndarray::ArrayView1<f64>> = state.iter().map(|s| s.view()).collect();
 
-	ndarray::stack(ndarray::Axis(0), &views[..]).unwrap()
+	ndarray::concatenate(ndarray::Axis(0), &views[..]).unwrap()
 }
 
 /// Write data contained in system to SPK file
@@ -54,7 +54,7 @@ pub fn states_at_instant(bodies: &[i32], t: f64) -> ndarray::Array2<f64> {
 pub fn write_to_spk(
 	fname: &str,
 	bodies: &[i32],
-	states: &[ndarray::Array2<f64>],
+	states: &[ndarray::Array1<f64>],
 	ets: &[f64],
 	cb_id: i32,
 	fraction_to_save: f32,
@@ -84,7 +84,7 @@ pub fn write_to_spk(
 	let states = states
 		.iter()
 		.step_by(steps_to_skip)
-		.collect::<Vec<&ndarray::Array2<f64>>>();
+		.collect::<Vec<&ndarray::Array1<f64>>>();
 
 	// Extract index of central observing body that is used across NBSD fields
 	let cb_idx = bodies
@@ -96,7 +96,7 @@ pub fn write_to_spk(
 	// to yield state relative to observing body
 	let cb_states: Vec<ndarray::ArrayView1<f64>> = states
 		.iter()
-		.map(|&s| s.slice(ndarray::s![cb_idx, ..]))
+		.map(|&s| s.slice(ndarray::s![(cb_idx * 6)..(cb_idx * 6 + 6)]))
 		.collect();
 	let cb_states_matrix = ndarray::concatenate(ndarray::Axis(0), &cb_states[..]).unwrap();
 
@@ -109,7 +109,7 @@ pub fn write_to_spk(
 		// Create state matrix for current target body with states in km and km/s
 		let body_states = states
 			.iter()
-			.map(|&s| s.slice(ndarray::s![idx, ..]))
+			.map(|&s| s.slice(ndarray::s![(idx * 6)..(idx * 6 + 6)]))
 			.collect::<Vec<ndarray::ArrayView1<f64>>>();
 		let mut states_matrix_km = (ndarray::concatenate(ndarray::Axis(0), &body_states[..])
 			.unwrap() - &cb_states_matrix)

@@ -1,9 +1,9 @@
-#![feature(trait_alias)]
 mod cli;
 mod ivp_utils;
 mod ode;
 mod propagate;
 mod spice_utils;
+mod tests;
 
 use clap::Parser;
 use cli::Args;
