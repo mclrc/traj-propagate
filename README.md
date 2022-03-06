@@ -41,8 +41,8 @@ OPTIONS:
 ### Example
 
 ```
-traj-propagate --mk spice_data/custom.tm --t0 '2013-NOV-19 00:00:00' --h 10 --dt 308 --bodies=Sun,Earth,5,-202 -o spice_data/maven_cruise.bsp
-Propagating interactions of 5 bodies over 308 days (dt=10min)
+traj-propagate --mk spice_data/custom.tm --t0 '2013-NOV-19 00:00:00' --h 10 --dt 308 --bodies=Sun,Earth,Mars,5,-202 -o spice_data/maven_cruise.bsp
+Propagating interactions of 6 bodies over 308 days (dt=10min)
 Progress:  [##################################################] 100% complete
 ```
 
