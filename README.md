@@ -22,28 +22,26 @@ traj-propagate 0.0.1
 pixldemon <moritzamando@protonmail.com>
 
 USAGE:
-    traj-propagate [OPTIONS] --mk <FILE> --t0 <UTC_TIMESTAMP> --dt <NUM_DAYS> --h <NUM_MINUTES> --bodies <BODIES>... --output-file <FILE>
+    traj-propagate [OPTIONS] --mk <FILE> --t0 <UTC_TIMESTAMP> --tfinal <UTC_TIMESTAMP> --h <NUM_MINUTES> --bodies <BODIES>... --output-file <FILE>
 
 OPTIONS:
-        --bodies <BODIES>...    Comma-separated NAIF-IDs or body names
-        --cb-id <NAIF_ID>       Observing body for SPK segments. Defaults to first body in list
-        --dt <NUM_DAYS>         Time period over which to propagate
-        --fts <FRACTION>        Fraction of steps to save to SPK file. 1 saves every step, 0.5 every
-                                2nd etc. Defaults to 1
-        --h <NUM_MINUTES>       Timestep size for integration
-    -h, --help                  Print help information
-        --mk <FILE>             Meta-kernel file name
-    -o, --output-file <FILE>    File to write results to
-        --t0 <UTC_TIMESTAMP>    Time at which to begin propagation
-    -V, --version               Print version information
+        --bodies <BODIES>...        Comma-separated NAIF-IDs or body names
+        --cb-id <NAIF_ID>           Observing body for SPK segments. Defaults to first body in list
+        --fts <FRACTION>            Fraction of steps to save to SPK file. 1 saves every step, 0.5
+                                    every 2nd etc. Defaults to 1
+        --h <NUM_MINUTES>           Timestep size for integration
+    -h, --help                      Print help information
+        --mk <FILE>                 Meta-kernel file name
+    -o, --output-file <FILE>        File to write results to
+        --t0 <UTC_TIMESTAMP>        Time at which to begin propagation
+        --tfinal <UTC_TIMESTAMP>    J2000 time to propagate up to
+    -V, --version                   Print version information
 ```
 
 ### Example
 
 ```
-traj-propagate --mk spice_data/custom.tm --t0 '2013-NOV-19 00:00:00' --h 10 --dt 308 --bodies=Sun,Earth,Mars,5,-202 -o spice_data/maven_cruise.bsp
-Propagating interactions of 6 bodies over 308 days (dt=10min)
-Progress:  [##################################################] 100% complete
+traj-propagate --mk spice_data/custom.tm --t0 '2013-NOV-19' --tfinal '2014-SEP-21' -h 10 --bodies=Sun,Earth,'Jupiter Barycenter',Maven,'Mars Barycenter' -o spice_data/maven_cruise.bsp
 ```
 
 This will propagate the trajectory of NASA's MAVEN mission from shortly after launch to just before it reached Mars and save the trajectory to `maven_cruise.bsp`
@@ -54,11 +52,12 @@ $ brief spice_data/maven_cruise.bsp
 BRIEF -- Version 4.0.0, September 8, 2010 -- Toolkit Version N0066
 
 
-Summary for: spice_data/maven_cruise.bsp
+Summary for: ../spice_data/maven_cruise.bsp
 
-Bodies: MAVEN (-202)            EARTH (399)
-        JUPITER BARYCENTER (5)  MARS (499)
+Bodies: MAVEN (-202)            JUPITER BARYCENTER (5)
+        MARS BARYCENTER (4)     EARTH (399)
         Start of Interval (ET)              End of Interval (ET)
         -----------------------------       -----------------------------
-        2013 NOV 19 00:01:07.182            2014 SEP 23 00:01:07.182
+        2013 NOV 19 00:11:07.182            2014 SEP 21 00:01:07.182
+
 ```

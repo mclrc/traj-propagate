@@ -31,7 +31,7 @@ fn main() -> Result<(), &'static str> {
 		&bodies,
 		&states,
 		&ets,
-		args.cb_id.unwrap_or_else(|| bodies[bodies.len() - 1]),
+		args.cb_id.unwrap_or_else(|| bodies[0]),
 		args.fts.unwrap_or(1.0),
 	);
 
