@@ -1,5 +1,5 @@
-use crate::ivp_utils;
 use crate::ode;
+use crate::solvers;
 use crate::spice_utils;
 
 /// Propagate trajectories
@@ -15,13 +15,14 @@ pub fn propagate(
 	mk: &str,
 	bodies: &[i32],
 	t0: &str,
-	dt: f64,
+	tfinal: &str,
 	h: f64,
-) -> (Vec<ndarray::Array2<f64>>, Vec<f64>) {
+) -> (Vec<ndarray::Array1<f64>>, Vec<f64>) {
 	println!(
-		"Propagating trajectories of {} bodies over {} days (dt={}min)",
+		"Propagating trajectories of {} bodies from {} to {} (dt={}min)",
 		bodies.len(),
-		dt,
+		t0,
+		tfinal,
 		h
 	);
 
@@ -31,6 +32,9 @@ pub fn propagate(
 	spice::furnsh(mk);
 
 	let et0 = spice::str2et(t0);
+	let etfinal = spice::str2et(tfinal);
+	assert!(etfinal > et0);
+
 	// Initial conditions
 	let y0 = spice_utils::states_at_instant(bodies, et0);
 
@@ -40,13 +44,20 @@ pub fn propagate(
 		.map(|&b| spice_utils::get_gm(b))
 		.collect::<Vec<f64>>();
 
-	let (states, ets) = ivp_utils::solve_ivp(
+	let (ets, states) = solvers::Rk4::new(
+		move |_: f64, y: &ndarray::Array1<f64>| ode::n_body_ode(y, &mus),
+		h * 60.0,
 		et0,
 		&y0,
-		move |_, y| ode::n_body_ode(y, &mus),
-		|f_, xs_, ys_, dt_| ivp_utils::solvers::rk4(f_, xs_, ys_, dt_),
-		dt * 3600.0 * 24.0,
-		h * 60.0,
+		etfinal,
+	)
+	.fold(
+		(Vec::new(), Vec::new()),
+		|(mut ets, mut states), (et, state)| {
+			ets.push(et);
+			states.push(state);
+			(ets, states)
+		},
 	);
 
 	// Unload kernels

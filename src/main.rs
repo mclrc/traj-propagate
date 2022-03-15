@@ -1,7 +1,7 @@
 mod cli;
-mod ivp_utils;
 mod ode;
 mod propagate;
+mod solvers;
 mod spice_utils;
 mod tests;
 
@@ -24,7 +24,7 @@ fn main() -> Result<(), &'static str> {
 		})
 		.collect::<Vec<i32>>();
 
-	let (states, ets) = propagate::propagate(&args.mk, &bodies, &args.t0, args.dt, args.h);
+	let (states, ets) = propagate::propagate(&args.mk, &bodies, &args.t0, &args.tfinal, args.h);
 
 	spice_utils::write_to_spk(
 		&args.output_file,

@@ -15,10 +15,10 @@ pub struct Args {
 
 	#[clap(
 		long,
-		value_name = "NUM_DAYS",
-		help = "Time period over which to propagate"
+		value_name = "UTC_TIMESTAMP",
+		help = "J2000 time to propagate up to"
 	)]
-	pub dt: f64,
+	pub tfinal: String,
 
 	#[clap(
 		long,
@@ -31,7 +31,7 @@ pub struct Args {
 		long,
 		required = true,
 		value_delimiter = ',',
-		require_delimiter = true,
+		require_value_delimiter = true,
 		min_values = 2,
 		help = "Comma-separated NAIF-IDs or body names"
 	)]

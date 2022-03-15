@@ -1,4 +1,6 @@
 #![cfg(test)]
+use super::*;
+use ::serial_test::serial;
 
 fn get_temp_filepath(fname: &str) -> String {
 	let mut filepath = std::env::temp_dir()
@@ -15,7 +17,13 @@ fn delete_if_exists(file: &std::path::Path) {
 	}
 }
 
-fn run_test_scenario(mk: &'static str, t0: &'static str, bodies: &[&'static str], dt: f64, h: f64) {
+fn run_test_scenario(
+	mk: &'static str,
+	t0: &'static str,
+	bodies: &[&'static str],
+	tfinal: &str,
+	h: f64,
+) {
 	let bodies = bodies
 		.iter()
 		.map(|&b| spice::bodn2c(b).0)
@@ -25,27 +33,40 @@ fn run_test_scenario(mk: &'static str, t0: &'static str, bodies: &[&'static str]
 	let file = std::path::Path::new(&filepath);
 	delete_if_exists(file);
 
-	let (states, ets) = crate::propagate::propagate(mk, &bodies, t0, dt, h);
+	let (states, ets) = propagate::propagate(mk, &bodies, t0, tfinal, h);
 
-	crate::spice_utils::write_to_spk(
+	spice_utils::write_to_spk(
 		&filepath,
 		&bodies,
 		&states,
 		&ets,
 		bodies[bodies.len() - 1],
-		0.05,
+		0.1,
 	);
 
 	assert!(file.exists());
 }
 
 #[test]
+#[serial]
 fn maven_cruise() {
 	run_test_scenario(
 		"spice/maven_cruise.bsp",
-		"2013-NOV-19 00:00:00",
+		"2013-NOV-20",
 		&["Sun", "Earth", "Jupiter Barycenter", "Mars", "Maven"],
-		308.0,
-		10.0,
+		"2014-SEP-21",
+		1000.0,
+	)
+}
+
+#[test]
+#[serial]
+fn voyager2_flyby() {
+	run_test_scenario(
+		"spice/voyager2_flyby.bsp",
+		"1978-JAN-23",
+		&["Sun", "Earth", "Jupiter Barycenter", "Mars", "Voyager 2"],
+		"1979-SEP-30",
+		1000.0,
 	)
 }
