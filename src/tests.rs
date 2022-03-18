@@ -23,6 +23,7 @@ fn run_test_scenario(
 	bodies: &[&'static str],
 	tfinal: &str,
 	h: f64,
+	method: &str,
 ) {
 	let bodies = bodies
 		.iter()
@@ -33,7 +34,7 @@ fn run_test_scenario(
 	let file = std::path::Path::new(&filepath);
 	delete_if_exists(file);
 
-	let (states, ets) = propagate::propagate(mk, &bodies, t0, tfinal, h);
+	let (states, ets) = propagate::propagate(mk, &bodies, t0, tfinal, h, method);
 
 	spice_utils::write_to_spk(
 		&filepath,
@@ -49,24 +50,26 @@ fn run_test_scenario(
 
 #[test]
 #[serial]
-fn maven_cruise() {
+fn maven_cruise_rk4() {
 	run_test_scenario(
 		"spice/maven_cruise.bsp",
 		"2013-NOV-20",
 		&["Sun", "Earth", "Jupiter Barycenter", "Mars", "Maven"],
 		"2014-SEP-21",
 		1000.0,
+		"rk4",
 	)
 }
 
 #[test]
 #[serial]
-fn voyager2_flyby() {
+fn voyager2_flyby_dopri45() {
 	run_test_scenario(
 		"spice/voyager2_flyby.bsp",
 		"1978-JAN-23",
 		&["Sun", "Earth", "Jupiter Barycenter", "Mars", "Voyager 2"],
 		"1979-SEP-30",
 		1000.0,
+		"dopri45",
 	)
 }

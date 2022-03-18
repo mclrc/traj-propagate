@@ -1,6 +1,7 @@
 use crate::ode;
 use crate::solvers;
 use crate::spice_utils;
+use ndarray::Array1;
 
 /// Propagate trajectories
 ///   `mk`: Meta-kernel file to load initial conditions
@@ -17,7 +18,8 @@ pub fn propagate(
 	t0: &str,
 	tfinal: &str,
 	h: f64,
-) -> (Vec<ndarray::Array1<f64>>, Vec<f64>) {
+	method: &str,
+) -> (Vec<Array1<f64>>, Vec<f64>) {
 	println!(
 		"Propagating trajectories of {} bodies from {} to {} (dt={}min)",
 		bodies.len(),
@@ -44,14 +46,15 @@ pub fn propagate(
 		.map(|&b| spice_utils::get_gm(b))
 		.collect::<Vec<f64>>();
 
-	let (ets, states) = solvers::Rk4::new(
-		move |_: f64, y: &ndarray::Array1<f64>| ode::n_body_ode(y, &mus),
-		h * 60.0,
-		et0,
-		&y0,
-		etfinal,
-	)
-	.fold(
+	let f = move |_: f64, y: &ndarray::Array1<f64>| ode::n_body_ode(y, &mus);
+
+	let points: Vec<(f64, Array1<f64>)> = match method {
+		"rk4" => solvers::Rk4::new(f, h * 60.0, et0, &y0, etfinal).collect(),
+		"dopri45" => solvers::Dopri45::new(f, h * 60.0, et0, &y0, etfinal, 5000.0, 0.0).collect(),
+		_ => unimplemented!("Unknown method"),
+	};
+
+	let (ets, states) = points.into_iter().fold(
 		(Vec::new(), Vec::new()),
 		|(mut ets, mut states), (et, state)| {
 			ets.push(et);

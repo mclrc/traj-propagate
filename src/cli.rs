@@ -53,4 +53,7 @@ pub struct Args {
 		help = "Observing body for SPK segments. Defaults to first body in list"
 	)]
 	pub cb_id: Option<i32>,
+
+	#[clap(long, value_name = "rk4|dopri45", help = "Integration method")]
+	pub method: Option<String>,
 }

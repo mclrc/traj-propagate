@@ -24,14 +24,21 @@ fn main() -> Result<(), &'static str> {
 		})
 		.collect::<Vec<i32>>();
 
-	let (states, ets) = propagate::propagate(&args.mk, &bodies, &args.t0, &args.tfinal, args.h);
+	let (states, ets) = propagate::propagate(
+		&args.mk,
+		&bodies,
+		&args.t0,
+		&args.tfinal,
+		args.h,
+		&args.method.unwrap_or_else(|| "rk4".into()),
+	);
 
 	spice_utils::write_to_spk(
 		&args.output_file,
 		&bodies,
 		&states,
 		&ets,
-		args.cb_id.unwrap_or_else(|| bodies[0]),
+		args.cb_id.unwrap_or(bodies[0]),
 		args.fts.unwrap_or(1.0),
 	);
 
