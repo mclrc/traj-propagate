@@ -37,6 +37,15 @@ pub struct Args {
 	)]
 	pub bodies: Vec<String>,
 
+	#[clap(
+		long,
+		value_delimiter = ',',
+		require_value_delimiter = true,
+		min_values = 1,
+		help = "Bodies to include whose gravitational pull/mass can be ignored (e. g. spacecraft)"
+	)]
+	pub small_bodies: Option<Vec<String>>,
+
 	#[clap(short, long, value_name = "FILE", help = "File to write results to")]
 	pub output_file: String,
 

@@ -15,6 +15,7 @@ use ndarray::Array1;
 pub fn propagate(
 	mk: &str,
 	bodies: &[i32],
+	small_bodies: &[i32],
 	t0: &str,
 	tfinal: &str,
 	h: f64,
@@ -38,19 +39,27 @@ pub fn propagate(
 	assert!(etfinal > et0);
 
 	// Initial conditions
-	let y0 = spice_utils::states_at_instant(bodies, et0);
+	let y0 = spice_utils::states_at_instant(
+		&bodies
+			.iter()
+			.cloned()
+			.chain(small_bodies.iter().cloned())
+			.collect::<Vec<i32>>(),
+		et0,
+	);
 
 	// Retrieve standard gravitational parameters
 	let mus = bodies
 		.iter()
 		.map(|&b| spice_utils::get_gm(b))
+		.chain(std::iter::repeat(0.0).take(small_bodies.len()))
 		.collect::<Vec<f64>>();
 
 	let f = move |_: f64, y: &ndarray::Array1<f64>| ode::n_body_ode(y, &mus);
 
 	let points: Vec<(f64, Array1<f64>)> = match method {
 		"rk4" => solvers::Rk4::new(f, h * 60.0, et0, &y0, etfinal).collect(),
-		"dopri45" => solvers::Dopri45::new(f, h * 60.0, et0, &y0, etfinal, 5000.0, 0.0).collect(),
+		"dopri45" => solvers::Dopri45::new(f, h * 60.0, et0, &y0, etfinal, 50000.0, 0.0).collect(),
 		_ => unimplemented!("Unknown method"),
 	};
 

@@ -21,6 +21,7 @@ fn run_test_scenario(
 	mk: &'static str,
 	t0: &'static str,
 	bodies: &[&'static str],
+	small_bodies: &[&'static str],
 	tfinal: &str,
 	h: f64,
 	method: &str,
@@ -29,19 +30,28 @@ fn run_test_scenario(
 		.iter()
 		.map(|&b| spice::bodn2c(b).0)
 		.collect::<Vec<i32>>();
+	let small_bodies = small_bodies
+		.iter()
+		.map(|&b| spice::bodn2c(b).0)
+		.collect::<Vec<i32>>();
 
 	let filepath = get_temp_filepath("/testspk.bsp");
 	let file = std::path::Path::new(&filepath);
 	delete_if_exists(file);
 
-	let (states, ets) = propagate::propagate(mk, &bodies, t0, tfinal, h, method);
+	let (states, ets) = propagate::propagate(mk, &bodies, &small_bodies, t0, tfinal, h, method);
+	println!("Computed {} states", states.len());
 
 	spice_utils::write_to_spk(
 		&filepath,
-		&bodies,
+		&bodies
+			.iter()
+			.cloned()
+			.chain(small_bodies.iter().cloned())
+			.collect::<Vec<i32>>(),
 		&states,
 		&ets,
-		bodies[bodies.len() - 1],
+		bodies[0],
 		0.1,
 	);
 
@@ -54,7 +64,8 @@ fn maven_cruise_rk4() {
 	run_test_scenario(
 		"spice/maven_cruise.bsp",
 		"2013-NOV-20",
-		&["Sun", "Earth", "Jupiter Barycenter", "Mars", "Maven"],
+		&["Sun", "Earth", "Jupiter Barycenter", "Mars"],
+		&["Maven"],
 		"2014-SEP-21",
 		1000.0,
 		"rk4",
@@ -67,7 +78,8 @@ fn voyager2_flyby_dopri45() {
 	run_test_scenario(
 		"spice/voyager2_flyby.bsp",
 		"1978-JAN-23",
-		&["Sun", "Earth", "Jupiter Barycenter", "Mars", "Voyager 2"],
+		&["Sun", "Earth", "Jupiter Barycenter", "Mars"],
+		&["Voyager 2"],
 		"1979-SEP-30",
 		1000.0,
 		"dopri45",
