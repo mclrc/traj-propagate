@@ -1,5 +1,20 @@
+use ndarray::{arr1, concatenate, s, Array1, ArrayView1, Axis};
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
+
+/// Parse body names/id strings to i32s
+pub fn naif_ids(bodies: &[impl AsRef<str>]) -> Vec<i32> {
+	bodies
+		.iter()
+		.map(|b| b.as_ref())
+		.map(|b| {
+			b.parse::<i32>().unwrap_or_else(|_| match spice::bodn2c(b) {
+				(id, true) => id,
+				(_, false) => panic!("Body '{}' not found in kernel pool", b),
+			})
+		})
+		.collect::<Vec<i32>>()
+}
 
 /// Retrieve standard gravitational parameter for body
 pub fn get_gm(body: i32) -> f64 {
@@ -17,8 +32,8 @@ pub fn get_gm(body: i32) -> f64 {
 }
 
 /// Retrieve state vector for body relative to central body at t
-pub fn get_state(body: i32, cb_id: i32, t: f64) -> [f64; 6] {
-	spice::core::raw::spkezr(&body.to_string(), t, "J2000", "NONE", &cb_id.to_string()).0
+pub fn state_at_instant(body: i32, cb_id: i32, et: f64) -> [f64; 6] {
+	spice::core::raw::spkezr(&body.to_string(), et, "J2000", "NONE", &cb_id.to_string()).0
 }
 
 /// Convert J2000 timestamp to UTC timestamp in string format
@@ -35,18 +50,17 @@ pub fn et2str(t: f64) -> String {
 	String::from(result_str)
 }
 
-/// Retrieve state vectors of specified bodies at t
-pub fn states_at_instant(bodies: &[i32], t: f64) -> ndarray::Array1<f64> {
-	let cb_id = bodies[0];
-
-	let state: Vec<ndarray::Array1<f64>> = bodies
+/// Retrieve state vectors of specified bodies at et
+pub fn states_at_instant(bodies: &[i32], cb_id: i32, et: f64) -> Array1<f64> {
+	// TODO: There must be a cleaner way to do this
+	let state: Vec<Array1<f64>> = bodies
 		.iter()
-		.map(|&id| ndarray::arr1(&get_state(id, cb_id, t)) * 1e3)
+		.map(|&id| arr1(&state_at_instant(id, cb_id, et)) * 1e3)
 		.collect();
 
-	let views: Vec<ndarray::ArrayView1<f64>> = state.iter().map(|s| s.view()).collect();
+	let views: Vec<ArrayView1<f64>> = state.iter().map(|s| s.view()).collect();
 
-	ndarray::concatenate(ndarray::Axis(0), &views[..]).unwrap()
+	concatenate(Axis(0), &views[..]).unwrap()
 }
 
 /// Write data contained in system to SPK file
@@ -54,11 +68,12 @@ pub fn states_at_instant(bodies: &[i32], t: f64) -> ndarray::Array1<f64> {
 pub fn write_to_spk(
 	fname: &str,
 	bodies: &[i32],
-	states: &[ndarray::Array1<f64>],
+	states: &[Array1<f64>],
 	ets: &[f64],
 	cb_id: i32,
 	fraction_to_save: f32,
 ) {
+	println!("Writing to SPK...");
 	if !(0.0..=1.0).contains(&fraction_to_save) {
 		panic!("Please supply a fraction_to_save value between 0 and 1")
 	}
@@ -78,27 +93,35 @@ pub fn write_to_spk(
 
 	let mut ets = ets
 		.iter()
-		.cloned()
 		.step_by(steps_to_skip)
+		.cloned()
 		.collect::<Vec<f64>>();
 	let states = states
 		.iter()
 		.step_by(steps_to_skip)
-		.collect::<Vec<&ndarray::Array1<f64>>>();
+		.collect::<Vec<&Array1<f64>>>();
 
 	// Extract index of central observing body that is used across NBSD fields
-	let cb_idx = bodies
-		.iter()
-		.position(|&id| id == cb_id)
-		.expect("Dataset does not contain specified observing body");
+	let cb_idx = bodies.iter().position(|&id| id == cb_id);
 
 	// Create state matrix for central body to subtract from target body state matrices
 	// to yield state relative to observing body
-	let cb_states: Vec<ndarray::ArrayView1<f64>> = states
-		.iter()
-		.map(|&s| s.slice(ndarray::s![(cb_idx * 6)..(cb_idx * 6 + 6)]))
-		.collect();
-	let cb_states_matrix = ndarray::concatenate(ndarray::Axis(0), &cb_states[..]).unwrap();
+	let cb_states = cb_idx.map(|idx| {
+		states
+			.iter()
+			.map(|&s| s.slice(s![(idx * 6)..(idx * 6 + 6)]).to_owned())
+			.collect::<Vec<_>>()
+	});
+	let cb_states_matrix_km = cb_states.map(|cb_states| {
+		concatenate(
+			Axis(0),
+			&cb_states
+				.iter()
+				.map(|s| s.view())
+				.collect::<Vec<ArrayView1<f64>>>(),
+		)
+		.unwrap() / 1000f64
+	});
 
 	for (idx, &id) in bodies.iter().enumerate() {
 		// Skip observing body
@@ -109,11 +132,14 @@ pub fn write_to_spk(
 		// Create state matrix for current target body with states in km and km/s
 		let body_states = states
 			.iter()
-			.map(|&s| s.slice(ndarray::s![(idx * 6)..(idx * 6 + 6)]))
-			.collect::<Vec<ndarray::ArrayView1<f64>>>();
-		let mut states_matrix_km = (ndarray::concatenate(ndarray::Axis(0), &body_states[..])
-			.unwrap() - &cb_states_matrix)
-			/ 1000.0;
+			.map(|&s| s.slice(s![(idx * 6)..(idx * 6 + 6)]))
+			.collect::<Vec<ArrayView1<f64>>>();
+
+		let mut states_matrix_km = (concatenate(Axis(0), &body_states[..]).unwrap()) / 1000f64;
+
+		if let Some(ref cb_states_matrix_km) = cb_states_matrix_km {
+			states_matrix_km -= cb_states_matrix_km;
+		}
 
 		// SPICE segment identifier
 		let segid = spice::cstr!(format!("Position of {} relative to {}", id, cb_id));

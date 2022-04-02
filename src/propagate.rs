@@ -4,18 +4,12 @@ use crate::spice_utils;
 use ndarray::Array1;
 
 /// Propagate trajectories
-///   `mk`: Meta-kernel file to load initial conditions
-///   `bodies`: NAIF-IDs of the bodies to include
-///   `t0`: J2000 epoch to begin propagation from
-///   `dt`: Time period over which to propagate, in days
-///   `h`: Time step size for integrator, in minutes
-/// Returns tuple `(states, ts)` where
-///   `states`: Calculated system states
-///   `ts`: Corresponding J2000 epochs
+#[allow(clippy::too_many_arguments)]
 pub fn propagate(
-	mk: &str,
 	bodies: &[i32],
 	small_bodies: &[i32],
+	attractors: &[i32],
+	cb_id: i32,
 	t0: &str,
 	tfinal: &str,
 	h: f64,
@@ -29,11 +23,6 @@ pub fn propagate(
 		h
 	);
 
-	// Load included kernels
-	spice::furnsh("spice/included.tm");
-	// Load user-provided kernels
-	spice::furnsh(mk);
-
 	let et0 = spice::str2et(t0);
 	let etfinal = spice::str2et(tfinal);
 	assert!(etfinal > et0);
@@ -45,6 +34,7 @@ pub fn propagate(
 			.cloned()
 			.chain(small_bodies.iter().cloned())
 			.collect::<Vec<i32>>(),
+		cb_id,
 		et0,
 	);
 
@@ -55,7 +45,13 @@ pub fn propagate(
 		.chain(std::iter::repeat(0.0).take(small_bodies.len()))
 		.collect::<Vec<f64>>();
 
-	let f = move |_: f64, y: &ndarray::Array1<f64>| ode::n_body_ode(y, &mus);
+	let attractors_with_mus = attractors
+		.iter()
+		.map(|&b| (b, spice_utils::get_gm(b)))
+		.collect::<Vec<_>>();
+
+	let f =
+		move |et: f64, y: &Array1<f64>| ode::n_body_ode(et, y, &mus, &attractors_with_mus, cb_id);
 
 	let points: Vec<(f64, Array1<f64>)> = match method {
 		"rk4" => solvers::Rk4::new(f, h * 60.0, et0, &y0, etfinal).collect(),
@@ -63,18 +59,15 @@ pub fn propagate(
 		_ => unimplemented!("Unknown method"),
 	};
 
+	let n_states = points.len();
 	let (ets, states) = points.into_iter().fold(
-		(Vec::new(), Vec::new()),
+		(Vec::with_capacity(n_states), Vec::with_capacity(n_states)),
 		|(mut ets, mut states), (et, state)| {
 			ets.push(et);
 			states.push(state);
 			(ets, states)
 		},
 	);
-
-	// Unload kernels
-	spice::unload("spice/included.tm");
-	spice::unload(mk);
 
 	(states, ets)
 }

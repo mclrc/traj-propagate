@@ -1,10 +1,14 @@
+use crate::spice_utils;
 use ndarray::{s, Array1};
 
 /// Calculate value of derivative for given state
-///   `state`: Current state of the system; ndarray of the bodies state vectors
-///   `mus`: Standard gravitational parameters of the bodies
-/// Returns ndarray of derivative state vectors
-pub fn n_body_ode(state: &Array1<f64>, mus: &[f64]) -> Array1<f64> {
+pub fn n_body_ode(
+	et: f64,
+	state: &Array1<f64>,
+	mus: &[f64],
+	attractors: &[(i32, f64)],
+	cb_id: i32,
+) -> Array1<f64> {
 	let n = mus.len();
 
 	let mut derivative = Array1::<f64>::zeros(n * 6);
@@ -29,6 +33,26 @@ pub fn n_body_ode(state: &Array1<f64>, mus: &[f64]) -> Array1<f64> {
 			a1_slice += &a1;
 			let mut a2_slice = derivative.slice_mut(s![(b2 * 6 + 3)..(b2 * 6 + 6)]);
 			a2_slice += &a2;
+		}
+	}
+
+	// If there are no attractors, there is nothing left to do
+	if attractors.is_empty() {
+		return derivative;
+	}
+
+	let attractor_positions = attractors
+		.iter()
+		.map(|&(id, _)| spice_utils::states_at_instant(&[id], cb_id, et).slice_move(s![..3]))
+		.collect::<Vec<_>>();
+
+	for b1 in 0..n {
+		let pos_slice = state.slice(s![(b1 * 6)..(b1 * 6 + 3)]);
+		let mut a_slice = derivative.slice_mut(s![(b1 * 6 + 3)..(b1 * 6 + 6)]);
+		for (idx, &(_, mu)) in attractors.iter().enumerate() {
+			let r = &attractor_positions[idx] - &pos_slice;
+			let a = (mu / r.dot(&r).sqrt().powf(3.0)) * &r;
+			a_slice += &a;
 		}
 	}
 

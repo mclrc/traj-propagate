@@ -29,13 +29,12 @@ pub struct Args {
 
 	#[clap(
 		long,
-		required = true,
 		value_delimiter = ',',
 		require_value_delimiter = true,
-		min_values = 2,
+		min_values = 1,
 		help = "Comma-separated NAIF-IDs or body names"
 	)]
-	pub bodies: Vec<String>,
+	pub bodies: Option<Vec<String>>,
 
 	#[clap(
 		long,
@@ -45,6 +44,15 @@ pub struct Args {
 		help = "Bodies to include whose gravitational pull/mass can be ignored (e. g. spacecraft)"
 	)]
 	pub small_bodies: Option<Vec<String>>,
+
+	#[clap(
+		long,
+		value_delimiter = ',',
+		require_value_delimiter = true,
+		min_values = 1,
+		help = "Bodies whose states to pull from SPICE instead of propagating"
+	)]
+	pub attractors: Option<Vec<String>>,
 
 	#[clap(short, long, value_name = "FILE", help = "File to write results to")]
 	pub output_file: String,
