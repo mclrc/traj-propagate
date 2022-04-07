@@ -21,9 +21,12 @@ traj-propagate 0.0.1
 pixldemon <moritzamando@protonmail.com>
 
 USAGE:
-    traj-propagate [OPTIONS] --mk <FILE> --t0 <UTC_TIMESTAMP> --tfinal <UTC_TIMESTAMP> --h <NUM_MINUTES> --bodies <BODIES>... --output-file <FILE>
-
+    traj-propagate [OPTIONS] --mk <FILE> --t0 <UTC_TIMESTAMP> --tfinal <UTC_TIMESTAMP> --h <NUM_MINUTES> --output-file <FILE>
 OPTIONS:
+        --atol <METERS>
+            Error tolerance for embedded methods
+        --attractors <ATTRACTORS>...
+            Bodies whose states to pull from SPICE instead of propagating
         --bodies <BODIES>...
             Comma-separated NAIF-IDs or body names
         --cb-id <NAIF_ID>
@@ -54,7 +57,7 @@ OPTIONS:
 ### Example
 
 ```
-traj-propagate --mk spice_data/custom.tm --t0 '2013-NOV-19' --tfinal 2014-SEP-20 --bodies=Sun,Earth,5,499 --small-bodies=-202 --method dopri45 --h 10 --fts 1 -o spice_data/maven_cruise.bsp
+traj-propagate --mk spice_data/custom.tm --t0 '2013-NOV-19' --tfinal 2014-SEP-20 --attractors=Sun,Earth,5,499 --small-bodies=-202 --method dopri45 --h 10 --fts 1 -o spice_data/maven_cruise.bsp
 ```
 
 This will propagate the trajectory of NASA's MAVEN mission from shortly after launch to just before it reached Mars and save the trajectory to `maven_cruise.bsp`
