@@ -1,14 +1,14 @@
 use crate::spice_utils;
 use ndarray::{s, Array1};
 
-/// Calculate value of derivative for given state
+/// Calculate derivative of given state
 pub fn n_body_ode(
 	et: f64,
 	state: &Array1<f64>,
 	mus: &[f64],
 	attractors: &[(i32, f64)],
 	cb_id: i32,
-) -> Array1<f64> {
+) -> Result<Array1<f64>, String> {
 	let n = mus.len();
 
 	let mut derivative = Array1::<f64>::zeros(n * 6);
@@ -36,25 +36,18 @@ pub fn n_body_ode(
 		}
 	}
 
-	// If there are no attractors, there is nothing left to do
-	if attractors.is_empty() {
-		return derivative;
-	}
+	for &(attractor_id, mu) in attractors {
+		let attractor_pos = spice_utils::state_at_instant(attractor_id, cb_id, et)?
+			.slice(s![..3])
+			.to_owned();
+		for b in 0..n {
+			let pos_slice = state.slice(s![(b * 6)..(b * 6 + 3)]);
+			let mut a_slice = derivative.slice_mut(s![(b * 6 + 3)..(b * 6 + 6)]);
 
-	let attractor_positions = attractors
-		.iter()
-		.map(|&(id, _)| spice_utils::states_at_instant(&[id], cb_id, et).slice_move(s![..3]))
-		.collect::<Vec<_>>();
-
-	for b1 in 0..n {
-		let pos_slice = state.slice(s![(b1 * 6)..(b1 * 6 + 3)]);
-		let mut a_slice = derivative.slice_mut(s![(b1 * 6 + 3)..(b1 * 6 + 6)]);
-		for (idx, &(_, mu)) in attractors.iter().enumerate() {
-			let r = &attractor_positions[idx] - &pos_slice;
+			let r = &attractor_pos - &pos_slice;
 			let a = (mu / r.dot(&r).sqrt().powf(3.0)) * &r;
 			a_slice += &a;
 		}
 	}
-
-	derivative
+	Ok(derivative)
 }

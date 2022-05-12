@@ -3,8 +3,12 @@ use crate::solvers;
 use crate::spice_utils;
 use ndarray::Array1;
 
+pub enum SolverConfig {
+	Rk4 { h: f64 },
+	Dopri45 { h: f64, atol: f64, rtol: f64 },
+}
+
 /// Propagate trajectories
-#[allow(clippy::too_many_arguments)]
 pub fn propagate(
 	bodies: &[i32],
 	small_bodies: &[i32],
@@ -12,22 +16,22 @@ pub fn propagate(
 	cb_id: i32,
 	t0: &str,
 	tfinal: &str,
-	h: f64,
-	method: &str,
-) -> (Vec<Array1<f64>>, Vec<f64>) {
+	solver: SolverConfig,
+) -> Result<(Vec<Array1<f64>>, Vec<f64>), String> {
 	println!(
-		"Propagating trajectories of {} bodies from {} to {} (dt={}min)",
+		"Propagating trajectories of {} bodies from {} to {}",
 		bodies.len(),
 		t0,
 		tfinal,
-		h
 	);
 
 	let et0 = spice::str2et(t0);
 	let etfinal = spice::str2et(tfinal);
-	assert!(etfinal > et0);
+	if et0 >= etfinal {
+		return Err("Start time is greater than end time".to_string());
+	}
 
-	// Initial conditions
+	// Initial conditions - retrieve state vectors from SPICE
 	let y0 = spice_utils::states_at_instant(
 		&bodies
 			.iter()
@@ -36,38 +40,41 @@ pub fn propagate(
 			.collect::<Vec<i32>>(),
 		cb_id,
 		et0,
-	);
+	)?;
 
-	// Retrieve standard gravitational parameters
-	let mus = bodies
-		.iter()
-		.map(|&b| spice_utils::get_gm(b))
-		.chain(std::iter::repeat(0.0).take(small_bodies.len()))
-		.collect::<Vec<f64>>();
+	// Retrieve standard gravitational parameters from SPICE
+	let mut mus = vec![0f64; bodies.len() + small_bodies.len()];
+	for (idx, &b) in bodies.iter().enumerate() {
+		mus[idx] = spice_utils::mu(b)?;
+	}
 
-	let attractors_with_mus = attractors
-		.iter()
-		.map(|&b| (b, spice_utils::get_gm(b)))
-		.collect::<Vec<_>>();
+	// Bundle attractor mus and ids in tuples
+	let mut attractors_with_mus = Vec::with_capacity(attractors.len());
+	for &id in attractors {
+		attractors_with_mus.push((id, spice_utils::mu(id)?));
+	}
 
+	// The actual derivative being integrated. Returns rate of change of system state
 	let f =
 		move |et: f64, y: &Array1<f64>| ode::n_body_ode(et, y, &mus, &attractors_with_mus, cb_id);
 
-	let points: Vec<(f64, Array1<f64>)> = match method {
-		"rk4" => solvers::Rk4::new(f, h * 60.0, et0, &y0, etfinal).collect(),
-		"dopri45" => solvers::Dopri45::new(f, h * 60.0, et0, &y0, etfinal, 50000.0, 0.0).collect(),
-		_ => unimplemented!("Unknown method"),
+	// Create solver object based on config on the heap (since exact type is unknown)
+	let mut solver: Box<dyn solvers::Solver> = match solver {
+		SolverConfig::Rk4 { h } => Box::new(solvers::Rk4::new(f, h, et0, &y0, etfinal)),
+		SolverConfig::Dopri45 { h, atol, rtol } => {
+			Box::new(solvers::Dopri45::new(f, h, et0, &y0, etfinal, atol, rtol))
+		}
 	};
 
-	let n_states = points.len();
-	let (ets, states) = points.into_iter().fold(
-		(Vec::with_capacity(n_states), Vec::with_capacity(n_states)),
-		|(mut ets, mut states), (et, state)| {
-			ets.push(et);
-			states.push(state);
-			(ets, states)
-		},
-	);
+	// TODO: Approximate number of required steps to avoid reallocations
+	let mut ets = Vec::new();
+	let mut states = Vec::new();
 
-	(states, ets)
+	// Collect integral points
+	while let Some((et, state)) = solver.next_state()? {
+		ets.push(et);
+		states.push(state);
+	}
+
+	Ok((states, ets))
 }

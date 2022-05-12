@@ -8,6 +8,6 @@ mod tests;
 
 use clap::Parser;
 
-fn main() -> Result<(), &'static str> {
+fn main() -> Result<(), String> {
 	run::run(cli::Args::parse())
 }

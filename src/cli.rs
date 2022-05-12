@@ -29,6 +29,12 @@ pub struct Args {
 
 	#[clap(
 		long,
+		help = "Error tolerance for embedded methods (target magnitude of error estimate)"
+	)]
+	pub atol: Option<f64>,
+
+	#[clap(
+		long,
 		value_delimiter = ',',
 		require_value_delimiter = true,
 		min_values = 1,
