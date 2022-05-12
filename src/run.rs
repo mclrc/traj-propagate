@@ -35,10 +35,6 @@ pub fn run(
 	let small_bodies = spice_utils::naif_ids(&small_bodies.unwrap_or_default())?;
 	let attractors = spice_utils::naif_ids(&attractors.unwrap_or_default())?;
 
-	// This unwrap is okay because there are only two possible scenarios:
-	// 		1. There is a combination of small_bodies and attractors,
-	// 		   in which case 'bodies' is guaranteed to be Some by the guards
-	//    2. There no small_bodies or attractors, meaning bodies can't be empty
 	let cb_id = cb_id.unwrap_or_else(|| bodies[0]);
 
 	// Create solver config based on CLI args
