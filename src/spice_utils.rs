@@ -6,15 +6,23 @@ pub fn set_error_handling(action: &str, len: &str) {
 	unsafe {
 		spice::c::errprt_c(spice::cstr!("set"), 0, spice::cstr!(len));
 		spice::c::erract_c(spice::cstr!("set"), 20, spice::cstr!(action));
+		spice::c::errdev_c(spice::cstr!("SET"), 0, spice::cstr!("NULL"));
 	}
 }
 
-pub fn get_err_msg() -> String {
-	let mut msgbuf = [0 as c_char; 50];
+pub fn get_spice_result_and_reset() -> Result<(), String> {
 	unsafe {
-		spice::c::getmsg_c(spice::cstr!("short"), 50, msgbuf.as_mut_ptr());
-		String::from(CStr::from_ptr(msgbuf.as_ptr()).to_str().unwrap())
+		if spice::c::failed_c() != 0 {
+			let mut msgbuf = [0 as c_char; 50];
+			spice::c::getmsg_c(spice::cstr!("short"), 50, msgbuf.as_mut_ptr());
+			spice::c::reset_c();
+			return Err(CStr::from_ptr(msgbuf.as_ptr())
+				.to_str()
+				.unwrap()
+				.to_string());
+		}
 	}
+	Ok(())
 }
 
 /// Parse body names/id strings to NAIF-ID i32s
@@ -24,7 +32,7 @@ pub fn naif_ids(bodies: &[impl AsRef<str>]) -> Result<Vec<i32>, String> {
 		let b = b.as_ref();
 		match spice::bodn2c(b) {
 			(id, true) => ids.push(id),
-			(_, false) => return Err(format!("Body '{b}' not found in kernel pool")),
+			(_, false) => return Err(format!("Unknown body: '{b}'")),
 		}
 	}
 	Ok(ids)
@@ -32,12 +40,12 @@ pub fn naif_ids(bodies: &[impl AsRef<str>]) -> Result<Vec<i32>, String> {
 
 /// Retrieve standard gravitational parameter for body
 pub fn mu(body: i32) -> Result<f64, String> {
+	set_error_handling("return", "short");
+
 	let mut dim: i32 = 0;
 	let mut value: f64 = 0.0;
 
-	set_error_handling("return", "short");
-
-	let success = unsafe {
+	unsafe {
 		spice::c::bodvrd_c(
 			spice::cstr!(body.to_string()),
 			spice::cstr!("GM"),
@@ -45,19 +53,13 @@ pub fn mu(body: i32) -> Result<f64, String> {
 			&mut dim,
 			&mut value,
 		);
-
-		spice::c::failed_c() == 0
 	};
 
+	get_spice_result_and_reset()
+		.map_err(|msg| format!("Could not retrieve GM for body {body}: {msg}"))?;
+
 	// Unit conversion: km^3/s^2 to m^3/s^2
-	if success {
-		Ok(value * 1e9)
-	} else {
-		Err(format!(
-			"Could not retrieve standard gravitational parameter for body {body}: {}",
-			get_err_msg()
-		))
-	}
+	Ok(value * 1e9)
 }
 
 /// Retrieve state vector for body relative to central body at t
@@ -67,14 +69,10 @@ pub fn state_at_instant(body: i32, cb_id: i32, et: f64) -> Result<Array1<f64>, S
 	let (pos, _) =
 		spice::core::raw::spkezr(&body.to_string(), et, "J2000", "NONE", &cb_id.to_string());
 
-	if unsafe { spice::c::failed_c() } == 0 {
-		Ok(arr1(&pos))
-	} else {
-		Err(format!(
-			"State for body {body} relative to {cb_id} at {et} could not be retrieved: {}",
-			get_err_msg()
-		))
-	}
+	get_spice_result_and_reset().map_err(|msg| {
+		format!("Could not retrieve state of {body} relative to {cb_id} at {et}: {msg}")
+	})?;
+	Ok(arr1(&pos))
 }
 
 /// Retrieve state vectors of specified bodies at et
@@ -89,7 +87,7 @@ pub fn states_at_instant(bodies: &[i32], cb_id: i32, et: f64) -> Result<Array1<f
 	Ok(state)
 }
 
-/// Write data contained in system to SPK file
+/// Write data to SPK file
 pub fn write_to_spk(
 	fname: &str,
 	bodies: &[i32],
@@ -98,11 +96,11 @@ pub fn write_to_spk(
 	cb_id: i32,
 	fraction_to_save: f32,
 ) -> Result<(), String> {
+	set_error_handling("return", "short");
+
 	if !(0.0..=1.0).contains(&fraction_to_save) {
 		return Err("Please supply a fraction_to_save value between 0 and 1".to_string());
 	}
-
-	set_error_handling("return", "short");
 
 	// Open a new SPK file.
 	let mut handle = 0;
@@ -115,12 +113,8 @@ pub fn write_to_spk(
 		)
 	};
 
-	if unsafe { spice::c::failed_c() } != 0 {
-		return Err(format!(
-			"Failed to open SPK file for writing: {}",
-			get_err_msg()
-		));
-	}
+	get_spice_result_and_reset()
+		.map_err(|msg| format!("Failed to open SPK file for writing: {msg}"))?;
 
 	// Extract states to actually write to the file
 	let steps_to_skip = (1.0 / fraction_to_save) as usize;
@@ -191,19 +185,13 @@ pub fn write_to_spk(
 		}
 	}
 
-	if unsafe { spice::c::failed_c() } != 0 {
-		return Err(format!("Failed to write to SPK file: {}", get_err_msg()));
-	}
+	get_spice_result_and_reset()
+		.map_err(|msg| format!("Failed to write segment to SPK file: {msg}"))?;
 
 	// Close previously created and populated SPK file
 	unsafe { spice::c::spkcls_c(handle) };
 
-	if unsafe { spice::c::failed_c() } != 0 {
-		Err(format!(
-			"Failed to close SPK file after writing: {}",
-			get_err_msg()
-		))
-	} else {
-		Ok(())
-	}
+	get_spice_result_and_reset().map_err(|msg| format!("Failed to close SPK file: {msg}"))?;
+
+	Ok(())
 }

@@ -38,11 +38,11 @@ fn run_test_scenario(
 		bodies: bodies.map(|bs| bs.iter().map(<_>::to_string).collect()),
 		small_bodies: small_bodies.map(|bs| bs.iter().map(<_>::to_string).collect()),
 		attractors: attractors.map(|bs| bs.iter().map(<_>::to_string).collect()),
-		t0: t0.to_owned(),
-		tfinal: tfinal.to_owned(),
+		t0: t0.to_string(),
+		tfinal: tfinal.to_string(),
 		atol: Some(50000.0),
 		h,
-		method: Some(method.to_owned()),
+		method: Some(method.to_string()),
 		cb_id: cb.map(|b| spice::bodn2c(b).0),
 		fts: Some(0.1),
 		output_file: filepath.clone(),
@@ -50,6 +50,10 @@ fn run_test_scenario(
 	.unwrap();
 
 	assert!(file.exists());
+
+	unsafe {
+		spice::c::reset_c();
+	}
 }
 
 #[test]
@@ -102,32 +106,8 @@ fn spkattractors() {
 
 #[test]
 #[serial]
-fn insuffdata() {
-	let filepath = get_temp_filepath("/testspk.bsp");
-	let file = std::path::Path::new(&filepath);
-	delete_if_exists(file);
-
-	match run::run(cli::Args {
-		mk: "spice/voyager2_flyby.bsp".to_string(),
-		atol: None,
-		fts: None,
-		output_file: filepath,
-		t0: "2000-JAN-23".to_string(),
-		bodies: None,
-		small_bodies: Some(["Voyager 2"].iter().map(<_>::to_string).collect()),
-		attractors: Some(
-			["Sun", "Earth", "Jupiter Barycenter", "Mars"]
-				.iter()
-				.map(<_>::to_string)
-				.collect(),
-		),
-		tfinal: "2005-SEP-01".to_string(),
-		h: 1000.0,
-		method: Some("dopri45".to_string()),
-		cb_id: Some(spice::bodn2c("Sun").0),
-	}) {
-		Err(msg) => println!("{msg}"),
-		Ok(_) => panic!("This should have failed"),
-	}
-	unsafe { spice::c::reset_c() }
+fn spice_errors() {
+	assert!(spice_utils::state_at_instant(-202, 10, 0f64).is_err());
+	assert!(spice_utils::mu(-202).is_err());
+	assert!(spice_utils::naif_ids(&["doesnotexist"]).is_err());
 }
