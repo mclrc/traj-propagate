@@ -1,15 +1,19 @@
 use ndarray::{arr1, concatenate, s, Array1, ArrayView1, Axis};
 use std::ffi::CStr;
 use std::os::raw::c_char;
+use std::path::Path;
 
-pub fn set_error_handling(action: &str, len: &str) {
+// Sets SPICE error handling action, message length and error device
+pub fn set_error_handling(action: &str, len: &str, dev: &str) {
 	unsafe {
 		spice::c::errprt_c(spice::cstr!("set"), 0, spice::cstr!(len));
 		spice::c::erract_c(spice::cstr!("set"), 20, spice::cstr!(action));
-		spice::c::errdev_c(spice::cstr!("SET"), 0, spice::cstr!("NULL"));
+		spice::c::errdev_c(spice::cstr!("SET"), 0, spice::cstr!(dev));
 	}
 }
 
+/// Ok if SPICE has not signaled an error, Err containing "short" error message if it has
+/// If Err, SPICE error status will also be reset to enable subsequent use
 pub fn get_spice_result_and_reset() -> Result<(), String> {
 	unsafe {
 		if spice::c::failed_c() != 0 {
@@ -40,7 +44,7 @@ pub fn naif_ids(bodies: &[impl AsRef<str>]) -> Result<Vec<i32>, String> {
 
 /// Retrieve standard gravitational parameter for body
 pub fn mu(body: i32) -> Result<f64, String> {
-	set_error_handling("return", "short");
+	set_error_handling("return", "short", "NULL");
 
 	let mut dim: i32 = 0;
 	let mut value: f64 = 0.0;
@@ -64,7 +68,7 @@ pub fn mu(body: i32) -> Result<f64, String> {
 
 /// Retrieve state vector for body relative to central body at t
 pub fn state_at_instant(body: i32, cb_id: i32, et: f64) -> Result<Array1<f64>, String> {
-	set_error_handling("return", "short");
+	set_error_handling("return", "short", "NULL");
 
 	let (pos, _) =
 		spice::core::raw::spkezr(&body.to_string(), et, "J2000", "NONE", &cb_id.to_string());
@@ -96,21 +100,26 @@ pub fn write_to_spk(
 	cb_id: i32,
 	fraction_to_save: f32,
 ) -> Result<(), String> {
-	set_error_handling("return", "short");
+	set_error_handling("return", "short", "NULL");
 
 	if !(0.0..=1.0).contains(&fraction_to_save) {
 		return Err("Please supply a fraction_to_save value between 0 and 1".to_string());
 	}
 
-	// Open a new SPK file.
+	// Open SPK file for writing
 	let mut handle = 0;
+	let kernel_exists = Path::new(fname).exists();
 	unsafe {
-		spice::c::spkopn_c(
-			spice::cstr!(fname),        // File name
-			spice::cstr!("Propagated"), // Internal file name
-			256,                        // Number of characters reserved for comments
-			&mut handle,
-		)
+		if kernel_exists {
+			spice::c::spkopa_c(spice::cstr!(fname), &mut handle);
+		} else {
+			spice::c::spkopn_c(
+				spice::cstr!(fname),        // File name
+				spice::cstr!("Propagated"), // Internal file name
+				256,                        // Number of characters reserved for comments
+				&mut handle,
+			)
+		}
 	};
 
 	get_spice_result_and_reset()

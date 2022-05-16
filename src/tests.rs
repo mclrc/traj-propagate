@@ -11,12 +11,6 @@ fn get_temp_filepath(fname: &str) -> String {
 	filepath
 }
 
-fn delete_if_exists(file: &std::path::Path) {
-	if file.exists() {
-		std::fs::remove_file(&file).unwrap();
-	}
-}
-
 #[allow(clippy::too_many_arguments)]
 fn run_test_scenario(
 	mk: &'static str,
@@ -29,9 +23,8 @@ fn run_test_scenario(
 	method: &str,
 	cb: Option<&str>,
 ) {
-	let filepath = get_temp_filepath("/testspk.bsp");
+	let filepath = get_temp_filepath("/traj-propagate-test.bsp");
 	let file = std::path::Path::new(&filepath);
-	delete_if_exists(file);
 
 	run::run(cli::Args {
 		mk: mk.to_string(),
