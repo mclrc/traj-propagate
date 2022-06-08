@@ -1,4 +1,4 @@
-use ndarray::{arr1, concatenate, s, Array1, ArrayView1, Axis};
+use ndarray::{arr1, concatenate, s, Array1, Axis};
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::path::Path;
@@ -46,8 +46,8 @@ pub fn naif_ids(bodies: &[impl AsRef<str>]) -> Result<Vec<i32>, String> {
 pub fn mu(body: i32) -> Result<f64, String> {
 	set_error_handling("return", "short", "NULL");
 
-	let mut dim: i32 = 0;
-	let mut value: f64 = 0.0;
+	let mut dim = 0;
+	let mut value = 0f64;
 
 	unsafe {
 		spice::c::bodvrd_c(
@@ -81,7 +81,7 @@ pub fn state_at_instant(body: i32, cb_id: i32, et: f64) -> Result<Array1<f64>, S
 
 /// Retrieve state vectors of specified bodies at et
 pub fn states_at_instant(bodies: &[i32], cb_id: i32, et: f64) -> Result<Array1<f64>, String> {
-	let mut state = ndarray::Array1::<f64>::zeros(bodies.len() * 6);
+	let mut state = ndarray::Array1::zeros(bodies.len() * 6);
 
 	for (idx, &b) in bodies.iter().enumerate() {
 		let mut s = state.slice_mut(s![(idx * 6)..(idx * 6 + 6)]);
@@ -102,7 +102,7 @@ pub fn write_to_spk(
 ) -> Result<(), String> {
 	set_error_handling("return", "short", "NULL");
 
-	if !(0.0..=1.0).contains(&fraction_to_save) {
+	if !(0f32..=1f32).contains(&fraction_to_save) {
 		return Err("Please supply a fraction_to_save value between 0 and 1".to_string());
 	}
 
@@ -126,16 +126,13 @@ pub fn write_to_spk(
 		.map_err(|msg| format!("Failed to open SPK file for writing: {msg}"))?;
 
 	// Extract states to actually write to the file
-	let steps_to_skip = (1.0 / fraction_to_save) as usize;
+	let steps_to_skip = (1f32 / fraction_to_save) as usize;
 	let mut ets = ets
 		.iter()
 		.step_by(steps_to_skip)
 		.cloned()
-		.collect::<Vec<f64>>();
-	let states = states
-		.iter()
-		.step_by(steps_to_skip)
-		.collect::<Vec<&Array1<f64>>>();
+		.collect::<Vec<_>>();
+	let states = states.iter().step_by(steps_to_skip).collect::<Vec<_>>();
 
 	// If the observing bodies trajectory was also propagated, assemble a state matrix for that body
 	// that can be substracted from other bodies state matrices to yield state relative to observing body
@@ -158,7 +155,7 @@ pub fn write_to_spk(
 		let body_states = states
 			.iter()
 			.map(|&s| s.slice(s![(idx * 6)..(idx * 6 + 6)]))
-			.collect::<Vec<ArrayView1<f64>>>();
+			.collect::<Vec<_>>();
 
 		let mut states_matrix_km = (concatenate(Axis(0), &body_states[..]).unwrap()) / 1000f64;
 

@@ -13,7 +13,6 @@ pub fn n_body_ode(
 
 	let mut derivative = Array1::<f64>::zeros(n * 6);
 
-	// For every pair of bodies
 	for b1 in 0..n {
 		// Derivative also includes velocities (1st derivative of position, acceleration is 2nd)
 		// Extract them from the state vectors

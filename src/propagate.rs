@@ -37,7 +37,7 @@ pub fn propagate(
 			.iter()
 			.cloned()
 			.chain(small_bodies.iter().cloned())
-			.collect::<Vec<i32>>(),
+			.collect::<Vec<_>>(),
 		cb_id,
 		et0,
 	)?;

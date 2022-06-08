@@ -33,11 +33,11 @@ fn run_test_scenario(
 		attractors: attractors.map(|bs| bs.iter().map(<_>::to_string).collect()),
 		t0: t0.to_string(),
 		tfinal: tfinal.to_string(),
-		atol: Some(50000.0),
+		atol: Some(50000f64),
 		h,
 		method: Some(method.to_string()),
 		cb_id: cb.map(|b| spice::bodn2c(b).0),
-		fts: Some(0.1),
+		fts: Some(0.1f32),
 		output_file: filepath.clone(),
 	})
 	.unwrap();
@@ -47,6 +47,7 @@ fn run_test_scenario(
 	unsafe {
 		spice::c::reset_c();
 	}
+	println!();
 }
 
 #[test]
@@ -59,7 +60,7 @@ fn maven_cruise_rk4() {
 		Some(&["Maven"]),
 		None,
 		"2014-SEP-21",
-		1000.0,
+		10f64,
 		"rk4",
 		None,
 	)
@@ -75,7 +76,7 @@ fn voyager2_flyby_dopri45() {
 		Some(&["Voyager 2"]),
 		None,
 		"1979-SEP-30",
-		1000.0,
+		1000f64,
 		"dopri45",
 		None,
 	)
@@ -91,7 +92,7 @@ fn spkattractors() {
 		Some(&["Voyager 2"]),
 		Some(&["Sun", "Earth", "Jupiter Barycenter", "Mars"]),
 		"1979-SEP-01",
-		1000.0,
+		1000f64,
 		"dopri45",
 		Some("Sun"),
 	)

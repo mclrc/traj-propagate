@@ -1,6 +1,7 @@
 use crate::cli;
 use crate::propagate;
 use crate::spice_utils;
+use std::time::SystemTime;
 
 pub fn run(
 	cli::Args {
@@ -42,11 +43,13 @@ pub fn run(
 		Some("rk4") | None => propagate::SolverConfig::Rk4 { h },
 		Some("dopri45") => propagate::SolverConfig::Dopri45 {
 			h,
-			atol: atol.unwrap_or(50000.0),
-			rtol: 0.0,
+			atol: atol.unwrap_or(50000f64),
+			rtol: 0f64,
 		},
 		Some(method) => return Err(format!("Unknown method: {method}")),
 	};
+
+	let start = SystemTime::now();
 
 	// Propagate trajectories
 	let (ets, states) = propagate::propagate(
@@ -60,22 +63,25 @@ pub fn run(
 	)?;
 
 	// Write propagated trajectories to new SPK kernel
+	println!("Writing to SPK...");
 	spice_utils::write_to_spk(
 		&output_file,
 		&bodies
 			.iter()
 			.cloned()
 			.chain(small_bodies.iter().cloned())
-			.collect::<Vec<i32>>(),
+			.collect::<Vec<_>>(),
 		&ets,
 		&states,
 		cb_id,
-		fts.unwrap_or(1.0),
+		fts.unwrap_or(1f32),
 	)?;
 
 	// Cleanup - unload kernels
 	spice::unload("spice/included.tm");
 	spice::unload(&mk);
+
+	println!("Done ({:?})", start.elapsed().unwrap());
 
 	Ok(())
 }
