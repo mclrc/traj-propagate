@@ -1,4 +1,7 @@
-### traj-propagate
+<div align="center">
+	<img width="128" height="128" src="/logo.png" />
+</div>
+<h2 align="center">traj-propagate</h2>
 
 Command line utility that reads from and writes to SPICE SPK files to propagate trajectories for spacecraft, planets or other bodies. Initial conditions must be given in the form of a single kernel (this can be a meta-kernel) from which the state of all specified bodies at t0 can be retrieved. For large bodies whose standard gravitational parameter is not given in the included kernels, additional PCKs must be provided. For small bodies, no additional data is required.
 
