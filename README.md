@@ -2,7 +2,7 @@
 	<img width="128" height="128" src="/logo.png" />
 </div>
 <div align="center">
-	<b>traj-propagate</b>
+	<h1>traj-propagate</h1>
 </div>
 <br>
 
@@ -12,7 +12,7 @@ The program will output a single new SPK containing all propagated trajectories.
 
 Note that the [CSPICE library](https://naif.jpl.nasa.gov/naif/toolkit.html) needs to be installed for this program to work. (see [these requirements](https://github.com/gregoirehenry/rust-spice#requirements))
 
-### Usage
+## Usage
 
 ```
 traj-propagate 0.0.1
@@ -52,7 +52,7 @@ OPTIONS:
     -V, --version
             Print version information
 ```
-### Example
+## Example
 
 ```
 traj-propagate --mk spice_data/custom.tm --t0 '2013-NOV-19' --tfinal 2014-SEP-20 --attractors=Sun,Earth,5,499 --small-bodies=-202 --method dopri45 --h 10 --fts 1 -o spice_data/maven_cruise.bsp
