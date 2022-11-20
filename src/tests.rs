@@ -1,4 +1,3 @@
-#![cfg(test)]
 use super::*;
 use ::serial_test::serial;
 
@@ -60,7 +59,7 @@ fn maven_cruise_rk4() {
 		Some(&["Maven"]),
 		None,
 		"2014-SEP-21",
-		10f64,
+		1000f64,
 		"rk4",
 		None,
 	)

@@ -4,6 +4,7 @@ mod propagate;
 mod run;
 mod solvers;
 mod spice_utils;
+#[cfg(test)]
 mod tests;
 
 use clap::Parser;
