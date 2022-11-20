@@ -109,18 +109,17 @@ pub fn write_to_spk(
 	// Open SPK file for writing
 	let mut handle = 0;
 	let kernel_exists = Path::new(fname).exists();
-	unsafe {
-		if kernel_exists {
+	if kernel_exists {
+		unsafe {
 			spice::c::spkopa_c(spice::cstr!(fname), &mut handle);
-		} else {
-			spice::c::spkopn_c(
-				spice::cstr!(fname),        // File name
-				spice::cstr!("Propagated"), // Internal file name
-				256,                        // Number of characters reserved for comments
-				&mut handle,
-			)
-		}
-	};
+		};
+	} else {
+		handle = spice::spkopn(
+			fname,
+			"Propagated",
+			256, // Number of characters reserved for comments
+		);
+	}
 
 	get_spice_result_and_reset()
 		.map_err(|msg| format!("Failed to open SPK file for writing: {msg}"))?;
@@ -163,39 +162,42 @@ pub fn write_to_spk(
 			states_matrix_km -= cb_states_matrix_km;
 		}
 
-		unsafe {
-			spice::c::spkw09_c(
-				// Handle for previously created, opened SPK file
-				handle,
-				// Target body ID
-				id,
-				// Observing body ID
-				cb_id,
-				// Reference frame
-				spice::cstr!("J2000"),
-				// t0
-				ets[0],
-				// tfinal
-				ets[ets.len() - 1],
-				// Segment identifier
-				spice::cstr!(format!("Position of {} relative to {}", id, cb_id)),
-				// Degree of polynomial to be used for lagrange interpolation. Currently somewhat arbitrary.
-				7,
-				// Number of states/epochs
-				body_states.len() as i32,
-				// Pointer to beginning of state matrix
-				states_matrix_km.as_mut_ptr().cast(),
-				// Pointer to beginning of epoch vec
-				ets.as_mut_ptr(),
-			)
-		}
+		spice::spkw09(
+			// Handle for previously created, opened SPK file
+			handle,
+			// Target body ID
+			id,
+			// Observing body ID
+			cb_id,
+			// Reference frame
+			"J2000",
+			// t0
+			ets[0],
+			// tfinal
+			ets[ets.len() - 1],
+			// Segment identifier
+			&format!("Position of {} relative to {}", id, cb_id),
+			// Degree of polynomial to be used for lagrange interpolation. Currently somewhat arbitrary.
+			7,
+			// Number of states/epochs
+			body_states.len() as i32,
+			// Pointer to beginning of state matrix
+			unsafe {
+				core::slice::from_raw_parts_mut(
+					states_matrix_km.as_mut_ptr().cast::<[f64; 6]>(),
+					body_states.len(),
+				)
+			},
+			// Epoch vec
+			&mut ets,
+		)
 	}
 
 	get_spice_result_and_reset()
 		.map_err(|msg| format!("Failed to write segment to SPK file: {msg}"))?;
 
 	// Close previously created and populated SPK file
-	unsafe { spice::c::spkcls_c(handle) };
+	spice::spkcls(handle);
 
 	get_spice_result_and_reset().map_err(|msg| format!("Failed to close SPK file: {msg}"))?;
 

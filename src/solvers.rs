@@ -28,7 +28,7 @@ pub mod step_fns {
 		rtol: f64,
 		safety_fac: f64,
 		max_relative_dh: f64,
-		) -> Result<(f64, Array1<f64>, f64), String> {
+	) -> Result<(f64, Array1<f64>, f64), String> {
 		let k1 = f(x, y)?;
 		let k2 = f(x + h*1.0/5.0,  &(y + h *  &k1*0.5))?;
 		let k3 = f(x + h*3.0/10.0, &(y + h * (&k1*3.0/40.0       + &k2*9.0/40.0)))?;
