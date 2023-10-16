@@ -77,6 +77,6 @@ pub struct Args {
 	)]
 	pub cb_id: Option<i32>,
 
-	#[clap(long, value_name = "rk4|dopri45", help = "Integration method")]
+	#[clap(long, value_name = "rk4|dopri45|euler", help = "Integration method")]
 	pub method: Option<String>,
 }

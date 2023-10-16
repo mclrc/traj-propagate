@@ -51,6 +51,23 @@ fn run_test_scenario(
 
 #[test]
 #[serial]
+fn maven_cruise_euler() {
+	println!("starting euler test");
+	run_test_scenario(
+		"spice/maven_cruise.bsp",
+		"2013-NOV-20",
+		Some(&["Sun", "Earth", "Jupiter Barycenter", "Mars"]),
+		Some(&["Maven"]),
+		None,
+		"2014-SEP-21",
+		100f64,
+		"euler",
+		None,
+	)
+}
+
+#[test]
+#[serial]
 fn maven_cruise_rk4() {
 	run_test_scenario(
 		"spice/maven_cruise.bsp",
@@ -83,7 +100,7 @@ fn voyager2_flyby_dopri45() {
 
 #[test]
 #[serial]
-fn spkattractors() {
+fn spk_attractors() {
 	run_test_scenario(
 		"spice/voyager2_flyby.bsp",
 		"1978-JAN-23",

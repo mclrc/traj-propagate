@@ -8,7 +8,7 @@ pub mod step_fns {
 		x: f64,
 		y: &Array1<f64>,
 		h: f64,
-		) -> Result<(f64, Array1<f64>), String> {
+	) -> Result<(f64, Array1<f64>), String> {
 		let k1 = f(x, y)?;
 		let k2 = f(x + 0.5 * h, &(y + h * &k1*0.5))?;
 		let k3 = f(x + 0.5 * h, &(y + h * &k2*0.5))?;
@@ -16,6 +16,16 @@ pub mod step_fns {
 
 		let next_y = y + (k1 + k2 * 2.0 + k3 * 2.0 + k4) * h / 6.0;
 
+		Ok((x + h, next_y))
+	}
+	pub fn euler(
+		f: impl Fn(f64, &Array1<f64>) -> Result<Array1<f64>, String>,
+		x: f64,
+		y: &Array1<f64>,
+		h: f64,
+	) -> Result<(f64, Array1<f64>), String> {
+		let dy = f(x, y)?;
+		let next_y = y + dy * h;
 		Ok((x + h, next_y))
 	}
 	#[allow(clippy::too_many_arguments)]
@@ -92,6 +102,45 @@ where
 		self.y = p.1.clone();
 
 		Ok(Some(p))
+	}
+}
+
+pub struct Euler<F> {
+	f: F,
+	x: f64,
+	y: Array1<f64>,
+	h: f64,
+	xmax: f64,
+}
+
+impl<F> Euler<F> {
+	pub fn new(f: F, h: f64, x0: f64, y0: &Array1<f64>, xmax: f64) -> Self {
+		Self {
+			f,
+			x: x0,
+			y: y0.clone(),
+			h,
+			xmax,
+		}
+	}
+}
+
+impl<F> Solver for Euler<F>
+where
+	F: Fn(f64, &Array1<f64>) -> Result<Array1<f64>, String>,
+{
+	fn next_state(&mut self) -> Result<Option<(f64, Array1<f64>)>, String> {
+		if self.x >= self.xmax {
+			return Ok(None);
+		} else if self.x + self.h > self.xmax {
+			self.h = self.xmax - self.x;
+		}
+
+		let p = step_fns::euler(|x, y| (self.f)(x, y), self.x, &self.y, self.h)?;
+		self.x = p.0;
+		self.y = p.1.clone();
+
+		Ok(Some(p.clone()))
 	}
 }
 

@@ -5,6 +5,7 @@ use ndarray::Array1;
 
 pub enum SolverConfig {
 	Rk4 { h: f64 },
+	Euler { h: f64 },
 	Dopri45 { h: f64, atol: f64, rtol: f64 },
 }
 
@@ -61,6 +62,7 @@ pub fn propagate(
 	// Create solver object based on config on the heap (since exact type is unknown)
 	let mut solver: Box<dyn solvers::Solver> = match solver {
 		SolverConfig::Rk4 { h } => Box::new(solvers::Rk4::new(f, h, et0, &y0, etfinal)),
+		SolverConfig::Euler { h } => Box::new(solvers::Euler::new(f, h, et0, &y0, etfinal)),
 		SolverConfig::Dopri45 { h, atol, rtol } => {
 			Box::new(solvers::Dopri45::new(f, h, et0, &y0, etfinal, atol, rtol))
 		}

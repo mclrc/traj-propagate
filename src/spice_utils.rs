@@ -8,7 +8,7 @@ pub fn set_error_handling(action: &str, len: &str, dev: &str) {
 	unsafe {
 		spice::c::errprt_c(spice::cstr!("set"), 0, spice::cstr!(len));
 		spice::c::erract_c(spice::cstr!("set"), 20, spice::cstr!(action));
-		spice::c::errdev_c(spice::cstr!("SET"), 0, spice::cstr!(dev));
+		spice::c::errdev_c(spice::cstr!("set"), 0, spice::cstr!(dev));
 	}
 }
 

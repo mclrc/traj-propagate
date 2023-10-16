@@ -41,6 +41,7 @@ pub fn run(
 	// Create solver config based on CLI args
 	let solver = match method.as_deref() {
 		Some("rk4") | None => propagate::SolverConfig::Rk4 { h },
+		Some("euler") => propagate::SolverConfig::Euler { h },
 		Some("dopri45") => propagate::SolverConfig::Dopri45 {
 			h,
 			atol: atol.unwrap_or(50000f64),
