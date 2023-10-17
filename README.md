@@ -62,7 +62,7 @@ traj-propagate --mk spice/tests.tm \
   -o example.bsp
 ```
 
-This will propagate the trajectory of NASA's MAVEN probe from shortly after launch to just before it reached Mars and save the trajectory to `maven_cruise.bsp`
+This will propagate the trajectory of NASA's MAVEN probe from shortly after launch to just before it reached Mars and save the trajectory to `example.bsp`
 
 ```
 $ brief -c example.bsp
