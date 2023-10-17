@@ -21,7 +21,7 @@ pub fn propagate(
 ) -> Result<(Vec<Array1<f64>>, Vec<f64>), String> {
 	println!(
 		"Propagating trajectories of {} bodies from {} to {}",
-		bodies.len(),
+		bodies.len() + small_bodies.len(),
 		t0,
 		tfinal,
 	);

@@ -34,10 +34,13 @@ pub fn naif_ids(bodies: &[impl AsRef<str>]) -> Result<Vec<i32>, String> {
 	let mut ids = Vec::new();
 	for b in bodies {
 		let b = b.as_ref();
-		match spice::bodn2c(b) {
-			(id, true) => ids.push(id),
-			(_, false) => return Err(format!("Unknown body: '{b}'")),
-		}
+        match b.parse::<i32>() {
+            Ok(id) => ids.push(id),
+            Err(_) => match spice::bodn2c(b) {
+                (id, true) => ids.push(id),
+                (_, false) => return Err(format!("Unknown body: '{b}'")),
+            }
+        }
 	}
 	Ok(ids)
 }

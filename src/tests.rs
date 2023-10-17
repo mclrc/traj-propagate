@@ -19,6 +19,7 @@ fn run_test_scenario(
 	attractors: Option<&[&'static str]>,
 	tfinal: &str,
 	h: f64,
+    atol: Option<f64>,
 	method: &str,
 	cb: Option<&str>,
 ) {
@@ -32,7 +33,7 @@ fn run_test_scenario(
 		attractors: attractors.map(|bs| bs.iter().map(<_>::to_string).collect()),
 		t0: t0.to_string(),
 		tfinal: tfinal.to_string(),
-		atol: Some(50000f64),
+		atol: atol.or(Some(50000f64)),
 		h,
 		method: Some(method.to_string()),
 		cb_id: cb.map(|b| spice::bodn2c(b).0),
@@ -54,13 +55,14 @@ fn run_test_scenario(
 fn maven_cruise_euler() {
 	println!("starting euler test");
 	run_test_scenario(
-		"spice/maven_cruise.bsp",
+		"spice/tests.tm",
 		"2013-NOV-20",
 		Some(&["Sun", "Earth", "Jupiter Barycenter", "Mars"]),
 		Some(&["Maven"]),
 		None,
 		"2014-SEP-21",
-		100f64,
+		1000f64,
+        None,
 		"euler",
 		None,
 	)
@@ -70,14 +72,32 @@ fn maven_cruise_euler() {
 #[serial]
 fn maven_cruise_rk4() {
 	run_test_scenario(
-		"spice/maven_cruise.bsp",
+		"spice/tests.tm",
 		"2013-NOV-20",
 		Some(&["Sun", "Earth", "Jupiter Barycenter", "Mars"]),
 		Some(&["Maven"]),
 		None,
 		"2014-SEP-21",
 		1000f64,
+        None,
 		"rk4",
+		None,
+	)
+}
+
+#[test]
+#[serial]
+fn maven_cruise_dopri45() {
+	run_test_scenario(
+		"spice/tests.tm",
+		"2013-NOV-20",
+		Some(&["Sun", "Earth", "Jupiter Barycenter", "Mars"]),
+		Some(&["Maven"]),
+		None,
+		"2014-SEP-21",
+		1000f64,
+        Some(50000f64),
+		"dopri45",
 		None,
 	)
 }
@@ -86,13 +106,14 @@ fn maven_cruise_rk4() {
 #[serial]
 fn voyager2_flyby_dopri45() {
 	run_test_scenario(
-		"spice/voyager2_flyby.bsp",
+		"spice/tests.tm",
 		"1978-JAN-23",
 		Some(&["Sun", "Earth", "Jupiter Barycenter", "Mars"]),
 		Some(&["Voyager 2"]),
 		None,
 		"1979-SEP-30",
 		1000f64,
+        None,
 		"dopri45",
 		None,
 	)
@@ -102,13 +123,14 @@ fn voyager2_flyby_dopri45() {
 #[serial]
 fn spk_attractors() {
 	run_test_scenario(
-		"spice/voyager2_flyby.bsp",
+		"spice/tests.tm",
 		"1978-JAN-23",
 		None,
 		Some(&["Voyager 2"]),
 		Some(&["Sun", "Earth", "Jupiter Barycenter", "Mars"]),
 		"1979-SEP-01",
 		1000f64,
+        None,
 		"dopri45",
 		Some("Sun"),
 	)
