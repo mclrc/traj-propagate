@@ -1,0 +1,31 @@
+name: Tests
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Download CSPICE
+      run:
+        wget https://naif.jpl.nasa.gov/pub/naif/toolkit/C/PC_Linux_GCC_64bit/packages/cspice.tar.Z &&
+        gzip -d cspice.tar.Z &&
+        tar xf cspice.tar &&
+        mv cspice/lib/cspice.a cspice/lib/libcspice.a
+    - name: Set CSPICE_DIR
+      run:
+        echo "CSPICE_DIR=$(readlink -f cspice)" >> $GITHUB_ENV
+    - name: Build
+      run: cargo build --verbose
+    - name: Run unit tests
+      run: cargo test --verbose -- --nocapture
+    - name: Test Example
+      run: ./example.sh
