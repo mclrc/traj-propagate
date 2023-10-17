@@ -1,12 +1,12 @@
-<div align="center">
-	<img width="128" height="128" src="/logo.png" />
-</div>
-<div align="center">
-	<h1>traj-propagate</h1>
-</div>
-<br>
+<img width="128" height="128" src="/logo.png" />
+<h1>traj-propagate</h1>
 
-Command line utility that reads from and writes to SPICE SPK files to propagate trajectories for spacecraft, planets or other bodies. Initial conditions must be given in the form of a single kernel (this can be a meta-kernel) from which the state of all specified bodies at t0 can be retrieved. For large bodies whose standard gravitational parameter is not given in the included kernels, additional PCKs must be provided. For small bodies, no additional data is required.
+![test workflow](https://github.com/mclrc/traj-propagate/actions/workflows/tests.yml/badge.svg)
+
+
+Command line utility that reads from and writes to SPICE SPK files to propagate trajectories for spacecraft, planets or other bodies.
+
+Initial conditions must be given in the form of a single kernel (this can be a meta-kernel) from which the state of all specified bodies at `t0` can be retrieved. For large bodies whose standard gravitational parameter is not given in the included kernels, additional PCKs must be provided. For small bodies, no additional data is required.
 
 The program will output a single new SPK containing all propagated trajectories. This kernel can then be used with other SPICE integrated tools, such as SPICE-Enhanced Cosmographia for trajectory visualisation.
 
@@ -55,23 +55,28 @@ OPTIONS:
 ## Example
 
 ```
-traj-propagate --mk spice_data/custom.tm --t0 '2013-NOV-19' --tfinal 2014-SEP-20 --attractors=Sun,Earth,5,499 --small-bodies=-202 --method dopri45 --h 10 --fts 1 -o spice_data/maven_cruise.bsp
+traj-propagate --mk spice/tests.tm \
+  --t0 '2013-NOV-20' --tfinal 2014-SEP-20 \
+  --cb-id=10 --bodies=Sun,Earth,5,499 --small-bodies=-202 \
+  --method dopri45 --h 1000 --fts 1 --atol 10000 \
+  -o example.bsp
 ```
 
 This will propagate the trajectory of NASA's MAVEN probe from shortly after launch to just before it reached Mars and save the trajectory to `maven_cruise.bsp`
 
 ```
-$ brief spice_data/maven_cruise.bsp
+$ brief -c example.bsp
 
-BRIEF -- Version 4.0.0, September 8, 2010 -- Toolkit Version N0066
-
-
-Summary for: spice_data/maven_cruise.bsp
-
-Bodies: MAVEN (-202)            JUPITER BARYCENTER (5)
-        MARS BARYCENTER (4)     EARTH (399)
+BRIEF -- Version 4.1.0, September 17, 2021 -- Toolkit Version N0067
+ 
+ 
+Summary for: example.bsp
+ 
+Bodies: MAVEN (-202) w.r.t. SUN (10)
+        JUPITER BARYCENTER (5) w.r.t. SUN (10)
+        EARTH (399) w.r.t. SUN (10)
+        MARS (499) w.r.t. SUN (10)
         Start of Interval (ET)              End of Interval (ET)
         -----------------------------       -----------------------------
-        2013 NOV 19 00:11:07.182            2014 SEP 21 00:01:07.182
-
+        2013 NOV 20 00:17:47.182            2014 SEP 20 00:01:07.182
 ```
