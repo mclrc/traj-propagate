@@ -25,6 +25,8 @@ jobs:
         echo "CSPICE_DIR=$(readlink -f cspice)" >> $GITHUB_ENV
     - name: Build
       run: cargo build --release --verbose
+    - name: Lint
+      run: cargo clippy -- -Dwarnings
     - name: Run unit tests
       run: cargo test --release --verbose -- --nocapture
     - name: Test Example
